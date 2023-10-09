@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -17,8 +16,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+
 import java.sql.SQLException;
-import java.util.List;
 
 
 @ControllerAdvice
@@ -53,8 +52,8 @@ public class RestResponseEntityHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({SQLException.class})
     public ResponseEntity<?> handleSQLException(SQLException ex, HttpServletRequest request, WebRequest webRequest) {
-        LOGGER_ERROR.error("Error ejecutando la consulta:" + ex.getMessage());
-        return buildWSsulionApiError("Error", webRequest, HttpStatus.INTERNAL_SERVER_ERROR);
+        LOGGER_ERROR.error("Error executing mysql query: " + ex.getMessage());
+        return buildWSsulionApiError("Error executing request", webRequest, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 
