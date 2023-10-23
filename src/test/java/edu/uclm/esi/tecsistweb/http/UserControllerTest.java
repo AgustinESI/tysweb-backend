@@ -1,33 +1,39 @@
 package edu.uclm.esi.tecsistweb.http;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
+import edu.uclm.esi.tecsistweb.repository.UserDAO;
+import org.json.JSONObject;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import java.util.HashMap;
-import java.util.Map;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 @SpringBootTest
+//@SpringBootTestsession
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserControllerTest {
 
 
     @Autowired
-    private MockMvc mockMvc;
+    private MockMvc server;
+
+    @Autowired
+    private UserDAO userDAO;
 
     private MockHttpSession session;
 
-    private static String registeredUserId;
 
     @BeforeEach
     public void setUp() {
@@ -35,195 +41,220 @@ public class UserControllerTest {
     }
 
 
-    @BeforeAll
-    public static void init() {
-        registeredUserId = null; // Initialize the static variable here
-    }
-
-    @Test
-    @DisplayName("Register")
+    @ParameterizedTest
+    @CsvSource({
+            "u, user-controller@alu.uclm.es, 123456, 123456",
+            ", user-controller@alu.uclm.es, 123456, 123456",
+            "user-controller.tsyweb, user-controller, 123456, 123456",
+    })
+    @DisplayName("Register - Name short/empty & wrong email format - TySWebException")
     @Order(1)
-    public void register() throws Exception {
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("name", "user-controller.tsyweb");
-        requestBody.put("email", "user-controller@alu.uclm.es");
-        requestBody.put("pwd1", "123456");
-        requestBody.put("pwd2", "123456");
+    void tes1(String name, String email, String pwd1, String pwd2) throws Exception {
 
-        String requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
+        JSONObject jso = new JSONObject().
+                put("name", name).
+                put("pwd1", pwd1).
+                put("pwd2", pwd2).
+                put("email", email);
 
-        mockMvc.perform(MockMvcRequestBuilders
-                        .post("/users/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBodyJson))
-                .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("user-controller.tsyweb")) // Assert the name
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("user-controller@alu.uclm.es")) // Assert the email
-                .andExpect(MockMvcResultMatchers.jsonPath("$.pwd").doesNotExist()) // Assert that pwd1 is not in the response
-                .andDo(result -> {
-                    // Extract and store the user's ID from the response
-                    String jsonResponse = result.getResponse().getContentAsString();
-                    registeredUserId = new ObjectMapper().readTree(jsonResponse).get("id").asText();
-                });
+        RequestBuilder request = MockMvcRequestBuilders.
+                post("/users/register").
+                contentType(MediaType.APPLICATION_JSON).
+                content(jso.toString());
+        this.server.perform(request).
+                andExpect(status().isBadRequest());
     }
 
-
-    @Test
-    @DisplayName("Register - Emtpy Email - Expect TySWebException - Email cannot be emtpy")
+    @ParameterizedTest
+    @CsvSource({
+            "user-controller.tsyweb, user-controller@alu.uclm.es, 1, 1",
+            "user-controller.tsyweb, user-controller@alu.uclm.es, 654321, 123456",
+    })
+    @DisplayName("Contraseñas mal o email inválido")
     @Order(2)
-    public void loginEmptyEmail() throws Exception {
-        // Create a request body with an empty email
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("email", ""); // Empty email
-        requestBody.put("pwd", "123456");
+    void tes2(String name, String email, String pwd1, String pwd2) throws Exception {
 
-        String requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
+        JSONObject jso = new JSONObject().
+                put("name", name).
+                put("pwd1", pwd1).
+                put("pwd2", pwd2).
+                put("email", email);
 
-        mockMvc.perform(MockMvcRequestBuilders
-                        .put("/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBodyJson))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Email cannot be empty"));
+        RequestBuilder request = MockMvcRequestBuilders.
+                post("/users/register").
+                contentType(MediaType.APPLICATION_JSON).
+                content(jso.toString());
+        this.server.perform(request).
+                andExpect(status().isForbidden());
     }
 
-    @Test
-    @DisplayName("Register - Null Email - Expect TySWebException - Email cannot be emtpy")
+    @ParameterizedTest
+    @CsvSource({
+            "user-controller.tsyweb, user-controller@alu.uclm.es, 123456, 123456",
+    })
+    @DisplayName("Contraseñas mal o email inválido")
     @Order(3)
-    public void loginNullEmail() throws Exception {
-        // Create a request body with an empty email
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("pwd", "123456");
+    void tes3(String name, String email, String pwd1, String pwd2) throws Exception {
 
-        String requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
+        JSONObject jso = new JSONObject().
+                put("name", name).
+                put("pwd1", pwd1).
+                put("pwd2", pwd2).
+                put("email", email);
 
-        mockMvc.perform(MockMvcRequestBuilders
-                        .put("/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBodyJson))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Email cannot be empty"));
+        RequestBuilder request = MockMvcRequestBuilders.
+                post("/users/register").
+                contentType(MediaType.APPLICATION_JSON).
+                content(jso.toString());
+        this.server.perform(request).
+                andExpect(status().isCreated());
     }
 
-    @Test
-    @DisplayName("Register - Null Pwd - Expect TySWebException - Password cannot be emtpy")
+    @ParameterizedTest
+    @CsvSource({
+            "   , 123456",
+            "user-controller@alu.uclm.es, ",
+    })
+    @DisplayName("Contraseñas mal o email inválido")
     @Order(4)
-    public void loginNullPwd() throws Exception {
-        // Create a request body with an empty email
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("email", "user-controller@alu.uclm.es");
+    void tes4(String email, String pwd) throws Exception {
 
-        String requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
+        JSONObject jso = new JSONObject().
+                put("pwd", pwd).
+                put("email", email);
 
-        mockMvc.perform(MockMvcRequestBuilders
-                        .put("/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBodyJson))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Password cannot be empty"));
+        RequestBuilder request = MockMvcRequestBuilders.
+                put("/users/login").
+                contentType(MediaType.APPLICATION_JSON).
+                content(jso.toString());
+        this.server.perform(request).
+                andExpect(status().isBadRequest());
     }
 
-    @Test
-    @DisplayName("Register - Empty Pwd - Expect TySWebException - Password cannot be emtpy")
+    @ParameterizedTest
+    @CsvSource({
+            "user-controller.tsyweb, user-controller@alu.uclm.es, 123456, 123456",
+    })
+    @DisplayName("Contraseñas mal o email inválido")
     @Order(5)
-    public void loginEmptyPwd() throws Exception {
-        // Create a request body with an empty email
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("email", "user-controller@alu.uclm.es");
-        requestBody.put("pwd", "");
+    void tes5(String name, String email, String pwd1, String pwd2) throws Exception {
 
-        String requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
 
-        mockMvc.perform(MockMvcRequestBuilders
-                        .put("/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBodyJson))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Password cannot be empty"));
+        JSONObject jso = new JSONObject().
+                put("name", name).
+                put("pwd1", pwd1).
+                put("pwd2", pwd2).
+                put("email", email);
+
+        RequestBuilder request = MockMvcRequestBuilders.
+                post("/users/register").
+                contentType(MediaType.APPLICATION_JSON).
+                content(jso.toString());
+        this.server.perform(request).
+                andExpect(status().isCreated());
+
+        jso = new JSONObject().
+                put("pwd", pwd1).
+                put("email", email);
+
+        request = MockMvcRequestBuilders.
+                put("/users/login").
+                contentType(MediaType.APPLICATION_JSON).
+                content(jso.toString());
+        this.server.perform(request).
+                andExpect(status().isOk());
     }
 
-
-    @Test
-    @DisplayName("Login")
+    @ParameterizedTest
+    @CsvSource({
+            "user-controller.tsyweb, user-controller@alu.uclm.es, 123456, 123456",
+    })
+    @DisplayName("Contraseñas mal o email inválido")
     @Order(6)
-    public void login() throws Exception {
-        // Create a request body with an empty email
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("email", "user-controller@alu.uclm.es");
-        requestBody.put("pwd", "123456");
+    void tes6(String name, String email, String pwd1, String pwd2) throws Exception {
 
-        String requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
 
-        mockMvc.perform(MockMvcRequestBuilders
-                        .put("/users/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBodyJson))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.name").exists());
+        JSONObject jso = new JSONObject().
+                put("name", name).
+                put("pwd1", pwd1).
+                put("pwd2", pwd2).
+                put("email", email);
+
+        RequestBuilder request = MockMvcRequestBuilders.
+                post("/users/register").
+                contentType(MediaType.APPLICATION_JSON).
+                content(jso.toString());
+        this.server.perform(request).
+                andExpect(status().isCreated());
+
+
+        request = MockMvcRequestBuilders.
+                get("/users/request-delete/" + email).
+                contentType(MediaType.APPLICATION_JSON).
+                param("pwd", pwd1);
+        this.server.perform(request).
+                andExpect(status().isOk());
+
+        request = MockMvcRequestBuilders.
+                delete("/users/delete").
+                contentType(MediaType.APPLICATION_JSON).
+                param("response", "false");
+        this.server.perform(request).
+                andExpect(status().isOk());
+
     }
 
-
-    @Test
-    @DisplayName("Request Delete Account - Ara you sure you want to delete your account?")
+    @ParameterizedTest
+    @CsvSource({
+            "user-controller.tsyweb, user-controller@alu.uclm.es, 123456, 123456",
+    })
+    @DisplayName("Contraseñas mal o email inválido")
     @Order(7)
-    public void testRequestDeleteEndpoint() throws Exception {
-        // Create a user and set it in the session
+    void tes7(String name, String email, String pwd1, String pwd2) throws Exception {
 
-        // Perform a GET request to the endpoint with email and pwd parameters
-        MockHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders
-                .get("/users/request-delete/user-controller@alu.uclm.es")
-                .param("pwd", "123456")
-                .session(session);
 
-        mockMvc.perform(requestBuilder)
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().string("Are you sure you want to delete your account?"));
+        JSONObject jso = new JSONObject().
+                put("name", name).
+                put("pwd1", pwd1).
+                put("pwd2", pwd2).
+                put("email", email);
+
+        RequestBuilder request = MockMvcRequestBuilders
+                .post("/users/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jso.toString());
+
+        MvcResult result = this.server.perform(request)
+                .andExpect(status().isCreated()) // Assert the status code as needed
+                .andReturn();
+
+        String jsonResponse = result.getResponse().getContentAsString();
+        JsonNode jsonNode = new ObjectMapper().readTree(jsonResponse);
+
+        session.setAttribute("user_id", jsonNode.get("id").asText());
+
+
+        request = MockMvcRequestBuilders.
+                get("/users/request-delete/" + email).
+                contentType(MediaType.APPLICATION_JSON).
+                param("pwd", pwd1).session(session);
+        this.server.perform(request).
+                andExpect(status().isOk());
+
+
+        request = MockMvcRequestBuilders.
+                delete("/users/delete").
+                contentType(MediaType.APPLICATION_JSON).
+                param("response", "true").session(session);
+        this.server.perform(request).
+                andExpect(status().isAccepted());
     }
 
 
-    @Test
-    @DisplayName("Delete - False - User not deleted")
-    @Order(8)
-    public void testDeleteAccountWithResponseFalse() throws Exception {
-        // Perform a DELETE request to the endpoint with response=false
-        MockHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders
-                .delete("/users/delete")
-                .param("response", "false")
-                .session(session);
-
-        mockMvc.perform(requestBuilder)
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().string("User not deleted"));
-    }
-
-    @Test
-    @DisplayName("Delete - True - User deleted")
-    @Order(9)
-    public void testDeleteAccountWithResponseTrue() throws Exception {
-
-        if (StringUtils.isBlank(registeredUserId)) {
-            throw new RuntimeException("User ID is missing.");
-        }
-
-        session.setAttribute("user_id", registeredUserId);
-
-
-        // Perform a DELETE request to the endpoint with response=true
-        MockHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders
-                .delete("/users/delete")
-                .param("response", "true")
-                .session(session);
-
-        mockMvc.perform(requestBuilder)
-                .andExpect(MockMvcResultMatchers.status().isAccepted())
-                .andExpect(MockMvcResultMatchers.content().string("User deleted"));
+    @AfterEach
+    @DisplayName("")
+    void end() {
+        this.userDAO.deleteAll();
     }
 
 

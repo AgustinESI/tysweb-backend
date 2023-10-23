@@ -2,7 +2,6 @@ package edu.uclm.esi.tecsistweb.http;
 
 import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
-import edu.uclm.esi.tecsistweb.service.HelperService;
 import edu.uclm.esi.tecsistweb.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -13,14 +12,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.util.Map;
 
 @RestController
 @RequestMapping("users")
 public class UserController {
 
-    @Autowired(required=true)
+    @Autowired(required = true)
     private UserService userService;
 
     @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -37,20 +35,24 @@ public class UserController {
     }
 
     @PutMapping("/login")
-    public User login(@RequestBody Map<String, String> body) {
+    public User login(HttpSession session, @RequestBody Map<String, String> body) {
 
         if (body.get("email") == null || StringUtils.isBlank(body.get("email").toString())) {
             throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("Email cannot be empty"));
         }
 
-        if (body.get("pwd") == null || StringUtils.isBlank(body.get("pwd").toString())) {
+        if (body.get("pwd1") == null || StringUtils.isBlank(body.get("pwd1").toString())) {
             throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("Password cannot be empty"));
         }
 
         String email = body.get("email");
-        String pwd = DigestUtils.sha512Hex(body.get("pwd").toString());
+        String pwd = DigestUtils.sha512Hex(body.get("pwd1").toString());
 
-        return this.userService.login(email, pwd);
+        User user = this.userService.login(email, pwd);
+
+        session.setAttribute("id_user", user.getId());
+
+        return user;
     }
 
 
@@ -68,6 +70,7 @@ public class UserController {
     public ResponseEntity<?> deleteAccount(HttpSession session, @RequestParam boolean response) {
 
         if (response) {
+            System.out.println("[INFO] user_id" + session.getAttribute("user_id"));
             String user_id = session.getAttribute("user_id").toString();
             this.userService.delete(user_id);
             session.invalidate();

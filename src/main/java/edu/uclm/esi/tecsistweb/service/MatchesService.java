@@ -1,45 +1,68 @@
 package edu.uclm.esi.tecsistweb.service;
 
-import edu.uclm.esi.tecsistweb.model.Battleship;
 import edu.uclm.esi.tecsistweb.model.Board;
 import edu.uclm.esi.tecsistweb.model.Match;
+import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
+import edu.uclm.esi.tecsistweb.repository.UserDAO;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class MatchesService extends HelperService {
 
+    @Autowired
+    private UserDAO userDAO;
+
     private char winner = '0';
 
-    private Map<String, Match> matchs = new HashMap<String, Match>();
 
-    public Match newMatch(int numberBoards, int col, int row) {
+    @Setter
+    private Map<String, Match> matchs = new HashMap<String, Match>();
+    @Setter
+    private List<Match> pending_matchs = new ArrayList<>();
+
+    public Match newMatch(String id_user, int numberBoards, int col, int row) {
+
+        Optional<User> optUser = this.userDAO.findById(id_user);
         Match match = new Match();
 
-        for (int k = 0; k < numberBoards; k++) {
-            Board board = new Board(col, row);
+        if (optUser.isPresent()) {
+            if (pending_matchs.isEmpty()) {
 
-            for (int i = 0; i < board.getBoard().length; i++) {
-                for (int j = 0; j < board.getBoard()[i].length; j++) {
-                    board.getBoard()[i][j] = '0';
+                for (int k = 0; k < numberBoards; k++) {
+                    Board board = new Board(col, row);
+
+                    for (int i = 0; i < board.getBoard().length; i++) {
+                        for (int j = 0; j < board.getBoard()[i].length; j++) {
+                            board.getBoard()[i][j] = '0';
+                        }
+                    }
+                    match.getBoardList().add(board);
                 }
+                pending_matchs.add(match);
+            } else {
+                match = this.pending_matchs.remove(0);
+                match.start();
+                this.matchs.put(match.getId_match(), match);
             }
-            match.getBoardList().add(board);
+        } else {
+            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
         }
-        matchs.put(match.getId_match(), match);
+
+        match.addUser(optUser.get());
 
         return match;
     }
 
 
-    public Boolean add(Map<String, Object> body) {
+    public Boolean add(Map<String, Object> body, String id_user) {
         boolean out = false;
 
         if (body.get("id_match") == null || StringUtils.isBlank(body.get("id_match").toString())) {
@@ -69,8 +92,8 @@ public class MatchesService extends HelperService {
 
         if (match != null) {
 
-            if (match.getLastColor() == color) {
-                throw new TySWebException(HttpStatus.FORBIDDEN, new Exception("Ilegal movement, you only can do 1 movement"));
+            if (!match.getCurrentUser().getId().equals(id_user)) {
+                throw new TySWebException(HttpStatus.FORBIDDEN, new Exception("Ilegal movement, not your turn"));
             }
 
             List<Board> list = match.getBoardList()
@@ -78,7 +101,7 @@ public class MatchesService extends HelperService {
                     .filter(_board -> _board.getId_board().equals(id_board))
                     .collect(Collectors.toList());
 
-            if (list != null && !list.isEmpty()) {
+            if (!list.isEmpty()) {
 
                 board = list.get(0);
 
@@ -86,7 +109,7 @@ public class MatchesService extends HelperService {
                     if (board.getBoard()[i][col] == '0' && !set) {
                         board.getBoard()[i][col] = color;
                         set = true;
-                        match.setLastColor(color);
+                        match.getTurn();
                     }
                 }
             } else {
@@ -107,47 +130,6 @@ public class MatchesService extends HelperService {
         return out;
     }
 
-
-    public MatchesService() {
-        super();
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    public Match addBattleShip(Battleship battleship, String id_match, String id_board) {
-
-
-        Match match = matchs.get(id_match);
-
-        if (match != null) {
-            List<Board> list = match.getBoardList()
-                    .stream()
-                    .filter(_board -> _board.getId_board().equals(id_board))
-                    .collect(Collectors.toList());
-            if (list != null && !list.isEmpty()) {
-
-                Board board = list.get(0);
-                board = battleship.fillShip(battleship.getAircraftCarrier(), board, Battleship.SHIP_TYPE.AIRCRAFTCARRIER);
-                board = battleship.fillShip(battleship.getArmored(), board, Battleship.SHIP_TYPE.ARMORED);
-                board = battleship.fillShip(battleship.getCruiser(), board, Battleship.SHIP_TYPE.CRUISER);
-                board = battleship.fillShip(battleship.getDestroyer1(), board, Battleship.SHIP_TYPE.DESTROYER);
-                board = battleship.fillShip(battleship.getDestroyer2(), board, Battleship.SHIP_TYPE.DESTROYER);
-                board = battleship.fillShip(battleship.getSubmarine1(), board, Battleship.SHIP_TYPE.SUBMARINE);
-                board = battleship.fillShip(battleship.getSubmarine2(), board, Battleship.SHIP_TYPE.SUBMARINE);
-
-            } else {
-                throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no board with id: " + id_board));
-            }
-        } else {
-            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no match with id: " + id_match));
-        }
-
-        return match;
-    }
-
     public Match getMatch(String id_match) {
 
         if (StringUtils.isBlank(id_match)) {
@@ -160,5 +142,15 @@ public class MatchesService extends HelperService {
             throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no match with id: " + id_match));
         }
         return match;
+    }
+
+    public Boolean requestTurn(String idMatch, String idUser) {
+
+        if (matchs.get(idMatch) != null) {
+            return true;
+        }
+
+        return false;
+
     }
 }

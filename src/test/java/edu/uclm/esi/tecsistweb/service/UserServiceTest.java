@@ -3,11 +3,11 @@ package edu.uclm.esi.tecsistweb.service;
 
 import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
+import edu.uclm.esi.tecsistweb.repository.UserDAO;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,187 +18,136 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserServiceTest {
 
     @Autowired
     UserService userService;
 
+    @Autowired
+    private UserDAO userDAO;
+
     private String user_id = "";
 
     private static final Logger LOGGER = (Logger) LoggerFactory.getLogger("UserServiceTest");
 
-    @BeforeEach
-    @DisplayName("Register - Save User - Returns User")
-    void saveUser() {
+
+    @ParameterizedTest
+    @CsvSource({
+            ", user-service@alu.uclm.es, 123456, 123456",
+            "u, user-service@alu.uclm.es, 123456, 123456",
+    })
+    @DisplayName("Register - Name null and short - TySWebException - The name is too short")
+    @Order(1)
+    void test1(String name, String email, String pwd1, String pwd2) {
+        User user = new User();
+        user.setName(name);
+        user.setPwd(pwd1);
+        user.setEmail(email);
+
+        TySWebException exception = assertThrows(TySWebException.class, () -> {
+            userService.register(name, email, pwd1, pwd2);
+        });
+
+        String expectedMessage = "The name is too short";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+
+    @ParameterizedTest
+    @CsvSource({
+            "user-service.tsyweb, user-service@alu.uclm.es, 1, 1",
+            "user-service.tsyweb, user-service@alu.uclm.es, 654321, 123456",
+    })
+    @DisplayName("Register - Pwd short and not equals - TySWebException")
+    @Order(2)
+    void test2(String name, String email, String pwd1, String pwd2) {
+        User user = new User();
+        user.setName(name);
+        user.setPwd(pwd1);
+        user.setEmail(email);
+
+        TySWebException exception = assertThrows(TySWebException.class, () -> {
+            userService.register(name, email, pwd1, pwd2);
+        });
+
+
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "user-service.tsyweb, user-service, 123456, 123456",
+    })
+    @DisplayName("Register - Pwd short and not equals - TySWebException - Not valid email format")
+    @Order(3)
+    void test3(String name, String email, String pwd1, String pwd2) {
+        User user = new User();
+        user.setName(name);
+        user.setPwd(pwd1);
+        user.setEmail(email);
+
+        TySWebException exception = assertThrows(TySWebException.class, () -> {
+            userService.register(name, email, pwd1, pwd2);
+        });
+
+        String expectedMessage = "Not valid email format";
+        String actualMessage = exception.getMessage();
+        assertEquals(actualMessage, expectedMessage);
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    @DisplayName("Register - Pwd short and not equals - TySWebException - Duplicate entry ***")
+    @Order(4)
+    void test4() {
         String name = "user-service.tsyweb";
         String email = "user-service@alu.uclm.es";
-        String pwd = "123456";
+        String pwd1 = "123456";
         String pwd2 = "123456";
 
         User user = new User();
         user.setName(name);
-        user.setPwd(pwd);
+        user.setPwd(pwd1);
         user.setEmail(email);
-        User user_saved = userService.register(name, email, pwd, pwd2);
-        user_id = user_saved.getId();
-        assertEquals(user.getName(), user_saved.getName());
-        assertEquals(user.getEmail(), user_saved.getEmail());
-        assertEquals(user.getPwd(), user_saved.getPwd());
-    }
 
+        userService.register(name, email, pwd1, pwd2);
 
-    @Test
-    @DisplayName("Register - Short Name - Expect TySWebException - The name is too short")
-    void shortName() {
-        String name = "u";
-        String email = "user-service@alu.uclm.es";
-        String pwd = "123456";
-        String pwd2 = "123456";
         TySWebException exception = assertThrows(TySWebException.class, () -> {
-            userService.register(name, email, pwd, pwd2);
+            userService.register(name, email, pwd1, pwd2);
         });
 
-        String expectedMessage = "The name is too short";
+        String expectedMessage = "Duplicate entry '" + user.getEmail() + "'";
         String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        assertTrue(actualMessage.contains(expectedMessage));
+        assertEquals(HttpStatus.CONFLICT, exception.getStatus());
     }
 
-    @Test
-    @DisplayName("Register - Short Name - Expect TySWebException - The name is too short")
-    void regusterEmptyName() {
-        String name = "";
-        String email = "user-service@alu.uclm.es";
-        String pwd = "123456";
-        String pwd2 = "123456";
-        TySWebException exception = assertThrows(TySWebException.class, () -> {
-            userService.register(name, email, pwd, pwd2);
-        });
-
-        String expectedMessage = "The name is too short";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-    }
-
-    @Test
-    @DisplayName("Register - Short pwd - Expect TySWebException - The password is too short")
-    void shortPwd() {
-        String name = "user-service.tsyweb";
-        String email = "user-service@alu.uclm.es";
-        String pwd = "1";
-        String pwd2 = "1";
-        TySWebException exception = assertThrows(TySWebException.class, () -> {
-            userService.register(name, email, pwd, pwd2);
-        });
-
-        String expectedMessage = "The password is too short";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
-    }
-
-    @Test
-    @DisplayName("Register - Not equals pwd  - Expect TySWebException - Password does not match")
-    void dontMatchPwd() {
-        String name = "user-service.tsyweb";
-        String email = "user-service@alu.uclm.es";
-        String pwd = "123456";
-        String pwd2 = "654321";
-        TySWebException exception = assertThrows(TySWebException.class, () -> {
-            userService.register(name, email, pwd, pwd2);
-        });
-
-        String expectedMessage = "Password does not match";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
-    }
-
-    @Test
-    @DisplayName("Register - Invalid Email - Expect TySWebException - Not valid email format")
-    void invalidEmail() {
-        String name = "user-service.tsyweb";
-        String email = "user";
-        String pwd = "123456";
-        String pwd2 = "123456";
-        TySWebException exception = assertThrows(TySWebException.class, () -> {
-            userService.register(name, email, pwd, pwd2);
-        });
-
-        String expectedMessage = "Not valid email format";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-    }
-
-    @Test
-    @DisplayName("Login - Empty email - Expect TySWebException - Email cannot be empty")
-    void loginEmptyEmail() {
-        String pwd = "123456";
-        String email = "";
+    @ParameterizedTest
+    @CsvSource({
+            "user-service@alu.uclm.es, ",
+            ", 123456",
+            "user-service, 123456",
+    })
+    @DisplayName("Login - Pwd/Email empty not valid Email,  - TySWebException")
+    @Order(5)
+    void test5(String email, String pwd) {
 
         TySWebException exception = assertThrows(TySWebException.class, () -> {
             userService.login(email, pwd);
         });
-
-        String expectedMessage = "Email cannot be empty";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
     }
 
-
-    @Test
-    @DisplayName("Login - Invalid Email - Expect TySWebException - Not valid email format")
-    void loginInvalidEmail() {
-        String pwd = "123456";
-        String email = "user";
-
-        TySWebException exception = assertThrows(TySWebException.class, () -> {
-            userService.login(email, pwd);
-        });
-
-        String expectedMessage = "Not valid email format";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-    }
-
-    @Test
-    @DisplayName("Login - Empty pwd - Expect TySWebException - Password cannot be empty")
-    void loginEmptyPwd() {
-        String pwd = "";
-        String email = "user-service@alu.uclm.es";
-
-        TySWebException exception = assertThrows(TySWebException.class, () -> {
-            userService.login(email, pwd);
-        });
-
-        String expectedMessage = "Password cannot be empty";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-    }
-
-    @Test
-    @DisplayName("Login - Get User")
-    void login() {
-        String pwd = DigestUtils.sha512Hex("123456");
-        String email = "user-service@alu.uclm.es";
-        String name = "user-service.tsyweb";
-
-        User user = userService.login(email, pwd);
-        assertEquals(user.getName(), name);
-        assertEquals(user.getEmail(), email);
-        assertEquals(user.getPwd(), pwd);
-    }
-
-    @Test
-    @DisplayName("Login - User not found - Expect TySWebException - User nor found")
-    void loginUserNotFound() {
-        String pwd = "123456";
-        String email = "user@alu.uclm.es";
+    @ParameterizedTest
+    @CsvSource({
+            "user-service@alu.uclm.es, 123456",
+    })
+    @DisplayName("Login - User not found  - TySWebException - User nor found")
+    @Order(6)
+    void test6(String email, String pwd) {
 
         TySWebException exception = assertThrows(TySWebException.class, () -> {
             userService.login(email, pwd);
@@ -206,39 +155,50 @@ public class UserServiceTest {
 
         String expectedMessage = "User nor found";
         String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
+        assertEquals(actualMessage, expectedMessage);
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
     }
 
-    @Test
-    @DisplayName("Login - User not found - Expect TySWebException - Duplicate entry '****'")
-    void registerDuplicatedKeys() {
-        String name = "user-service.tsyweb";
-        String email = "user-service@alu.uclm.es";
-        String pwd = "123456";
-        String pwd2 = "123456";
+    @ParameterizedTest
+    @CsvSource({
+            "user-service.tsyweb, user-service@alu.uclm.es, 123456, 123456",
+    })
+    @DisplayName("Login")
+    @Order(7)
+    void test7(String name, String email, String pwd1, String pwd2) {
+        User user_saved = userService.register(name, email, pwd1, pwd2);
+        User user_find = userService.login(email, DigestUtils.sha512Hex(pwd1));
 
-        User user = new User();
-        user.setName(name);
-        user.setPwd(pwd);
-        user.setEmail(email);
+        assertEquals(user_saved.getId(), user_find.getId());
+        assertEquals(user_saved.getName(), user_find.getName());
+        assertEquals(user_saved.getPwd(), user_find.getPwd());
+        assertEquals(user_saved.getEmail(), user_find.getEmail());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "user-service.tsyweb, user-service@alu.uclm.es, 123456, 123456",
+    })
+    @DisplayName("Delete - Not found - TySWebException - User nor found")
+    @Order(8)
+    void test8(String name, String email, String pwd1, String pwd2) {
+
+        User user_saved = userService.register(name, email, pwd1, pwd2);
+        userService.delete(user_saved.getId());
 
         TySWebException exception = assertThrows(TySWebException.class, () -> {
-            userService.register(name, email, pwd, pwd2);
+            userService.login(email, pwd1);
         });
 
-        String expectedMessage = "Duplicate entry '" + user.getEmail() + "'";
+        String expectedMessage = "User nor found";
         String actualMessage = exception.getMessage();
-        assertTrue(actualMessage.contains(expectedMessage));
-        assertEquals(HttpStatus.CONFLICT, exception.getStatus());
-
+        assertEquals(actualMessage, expectedMessage);
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
     }
+
 
     @AfterEach
-    @DisplayName("Delete - Delete - Expect TySWebException - User nor found")
-    void delete() {
-        userService.delete(user_id);
+    void end() {
+        userDAO.deleteAll();
     }
-
-
 }

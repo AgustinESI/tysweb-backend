@@ -1,22 +1,23 @@
 package edu.uclm.esi.tecsistweb.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hamcrest.Matchers;
+import edu.uclm.esi.tecsistweb.model.User;
+import edu.uclm.esi.tecsistweb.repository.UserDAO;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -25,209 +26,174 @@ public class MatchesControllerTest {
 
 
     @Autowired
-    private MockMvc mockMvc;
+    private MockMvc server;
 
-    private static String id_board_line;
-    private static String id_match_line;
+    @Autowired
+    private UserDAO userDAO;
 
-    private static String id_board_battleship;
-    private static String id_match_battleship;
+    private MockHttpSession session;
 
-    @BeforeAll
-    public static void init() {
-        id_board_line = null;
-        id_match_line = null;
-        id_board_battleship = null;
-        id_match_battleship = null;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        session = new MockHttpSession();
+        String name = "matches-controller.tsyweb";
+        String email = "matches-controller@alu.uclm.es";
+        String pwd1 = "123456";
+        String pwd2 = "123456";
+
+        JSONObject jso = new JSONObject().
+                put("name", name).
+                put("pwd1", pwd1).
+                put("pwd2", pwd2).
+                put("email", email);
+
+        RequestBuilder request = MockMvcRequestBuilders.
+                post("/users/register").
+                contentType(MediaType.APPLICATION_JSON).
+                content(jso.toString());
+        this.server.perform(request).
+                andExpect(status().isCreated());
+
+        session = new MockHttpSession();
+
     }
 
     @Test
+    @DisplayName("/matches/4line/start - User null - TySWebException")
     @Order(1)
-    public void testStart4InALine() throws Exception {
-        // Perform a GET request to the endpoint
-        MockHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders
-                .get("/matches/4line/start")
-                .contentType(MediaType.APPLICATION_JSON);
+    void tes1() throws Exception {
 
-        mockMvc.perform(requestBuilder)
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.id_match").isNotEmpty())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.boardList").isNotEmpty())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.boardList[0].id_board").isNotEmpty())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.boardList[0].board").isArray())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.boardList[0].board", Matchers.hasSize(6)))
-                .andDo(result -> {
-                    String jsonResponse = result.getResponse().getContentAsString();
-                    id_match_line = new ObjectMapper().readTree(jsonResponse).get("id_match").asText();
-                    id_board_line = new ObjectMapper().readTree(jsonResponse).path("boardList").get(0).path("id_board").asText();
-                });
-
+        RequestBuilder request = MockMvcRequestBuilders.
+                get("/matches/4line/start").
+                contentType(MediaType.APPLICATION_JSON)
+                .session(session);
+        this.server.perform(request).
+                andExpect(status().isNotFound());
     }
 
-
     @Test
+    @DisplayName("/matches/4line/start - User not found - TySWebException")
     @Order(2)
-    public void testAdd4InALine() throws Exception {
-        // Create a sample request body
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("id_match", id_match_line);
-        requestBody.put("id_board", id_board_line);
-        requestBody.put("col", 0);
-        requestBody.put("color", "R");
+    void tes2() throws Exception {
+        session.setAttribute("id_user", "1");
 
-        String requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
+        RequestBuilder request = MockMvcRequestBuilders.
+                get("/matches/4line/start").
+                contentType(MediaType.APPLICATION_JSON)
+                .session(session);
+        this.server.perform(request).
+                andExpect(status().isNotFound());
+    }
 
-        MockHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders
-                .post("/matches/4line/add")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBodyJson);
+    @ParameterizedTest
+    @CsvSource({
+            "matches-controller@alu.uclm.es, 123456",
+    })
+    @DisplayName("/matches/4line/start - User not found - TySWebException")
+    @Order(3)
+    void tes3(String email, String pwd) throws Exception {
 
-        mockMvc.perform(requestBuilder)
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.id_match").value(id_match_line));
+        User u = userDAO.findByEmailAndPwd(email, DigestUtils.sha512Hex(pwd));
+
+        session.setAttribute("id_user", u.getId());
+
+        RequestBuilder request = MockMvcRequestBuilders.
+                get("/matches/4line/start").
+                contentType(MediaType.APPLICATION_JSON)
+                .session(session);
+        this.server.perform(request).
+                andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("/matches/4line/start - User id null - TySWebException")
+    @Order(4)
+    void tes4() throws Exception {
+
+
+        JSONObject jso = new JSONObject().
+                put("id_match", "").
+                put("id_board", "").
+                put("col", "").
+                put("color", "");
+
+        RequestBuilder request = MockMvcRequestBuilders.
+                post("/matches/4line/add").
+                contentType(MediaType.APPLICATION_JSON)
+                .content(jso.toString())
+                .session(session);
+        this.server.perform(request).
+                andExpect(status().isNotFound());
     }
 
 
     @Test
-    @Order(3)
-    public void testAdd4InALineEnd() throws Exception {
-
-        int count = 0;
-        for (int i = 0; i < 3; i++) {
+    @DisplayName("/matches/4line/start - User not found - TySWebException")
+    @Order(5)
+    void tes5() throws Exception {
 
 
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("id_match", id_match_line);
-            requestBody.put("id_board", id_board_line);
-            requestBody.put("col", 1);
-            requestBody.put("color", "A");
+        JSONObject jso = new JSONObject().
+                put("id_match", "").
+                put("id_board", "").
+                put("col", "").
+                put("color", "");
 
-            String requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
+        session.setAttribute("id_user", "1");
 
-            MockHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders
-                    .post("/matches/4line/add")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(requestBodyJson);
-
-            mockMvc.perform(requestBuilder)
-                    .andExpect(MockMvcResultMatchers.status().isOk())
-                    .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.id_match").value(id_match_line));
-            count++;
-
-            if (count == 3) {
-                break;
-            }
-
-            requestBody = new HashMap<>();
-            requestBody.put("id_match", id_match_line);
-            requestBody.put("id_board", id_board_line);
-            requestBody.put("col", 0);
-            requestBody.put("color", "R");
-
-            requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
-
-            requestBuilder = MockMvcRequestBuilders
-                    .post("/matches/4line/add")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(requestBodyJson);
-
-            mockMvc.perform(requestBuilder)
-                    .andExpect(MockMvcResultMatchers.status().isOk())
-                    .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.id_match").value(id_match_line));
+        RequestBuilder request = MockMvcRequestBuilders.
+                post("/matches/4line/add").
+                contentType(MediaType.APPLICATION_JSON)
+                .session(session)
+                .content(jso.toString());
+        this.server.perform(request).
+                andExpect(status().isNotFound());
+    }
 
 
+    @ParameterizedTest
+    @CsvSource({
+            ", 1, 0, R",
+            "1, , 0, R",
+            "1, 1, , R",
+            "1, 1, 0, ",
+    })
+    @DisplayName("/matches/4line/start - User not found - TySWebException")
+    @Order(6)
+    void tes6(String id_match, String id_board, String col, String color) throws Exception {
+
+
+        User u = userDAO.findByEmailAndPwd("matches-controller@alu.uclm.es", DigestUtils.sha512Hex("123456"));
+        session.setAttribute("id_user", u.getId());
+
+        JSONObject jso = new JSONObject().
+                put("id_match", id_match).
+                put("id_board", id_board);
+
+        if (StringUtils.isNotBlank(col)) {
+            jso.put("col", Integer.parseInt(col));
         }
 
+        if (StringUtils.isNotBlank(color)) {
+            jso.put("color", color.charAt(0));
+        }
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("id_match", id_match_line);
-        requestBody.put("id_board", id_board_line);
-        requestBody.put("col", 0);
-        requestBody.put("color", "R");
+        RequestBuilder request = MockMvcRequestBuilders.
+                post("/matches/4line/add").
+                contentType(MediaType.APPLICATION_JSON)
+                .content(jso.toString())
+                .session(session);
+        this.server.perform(request).
+                andExpect(status().isNotFound());
 
 
-        String requestBodyJson = new ObjectMapper().writeValueAsString(requestBody);
-
-        MockHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders
-                .post("/matches/4line/add")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBodyJson);
-
-        mockMvc.perform(requestBuilder)
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().string("The end of the game"));
     }
 
-
-    @Test
-    @Order(4)
-    public void testStartBattleship() throws Exception {
-        // Perform a GET request to the endpoint
-        MockHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders
-                .get("/matches/battleship/start")
-                .contentType(MediaType.APPLICATION_JSON);
-
-        mockMvc.perform(requestBuilder)
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.id_match").isNotEmpty()) // Assert that id_match is not empty
-                .andExpect(MockMvcResultMatchers.jsonPath("$.boardList").isNotEmpty())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.boardList[1].id_board").isNotEmpty())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.boardList[1].board").isArray())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.boardList[1].board", Matchers.hasSize(10)))
-                .andDo(result -> {
-                    String jsonResponse = result.getResponse().getContentAsString();
-                    id_match_battleship = new ObjectMapper().readTree(jsonResponse).get("id_match").asText();
-                    id_board_battleship = new ObjectMapper().readTree(jsonResponse).path("boardList").get(0).path("id_board").asText();
-                });
-    }
-
-    @Test
-    @Order(5)
-    public void testAdBattleship() throws Exception {
-
-        Map<String, Object> body = new HashMap<>();
-
-        body.put("id_match", id_match_battleship);
-        body.put("id_board", id_board_battleship);
-
-        List<String> aircraftCarrier = Arrays.asList("A0", "A1", "A2", "A3", "A4");
-        body.put("aircraftCarrier", aircraftCarrier);
-
-        List<String> armored = Arrays.asList("B0", "B1", "B2", "B3");
-        body.put("armored", armored);
-
-        List<String> cruiser = Arrays.asList("C0", "C1", "C2");
-        body.put("cruiser", cruiser);
-
-        List<String> destroyer1 = Arrays.asList("D0", "D1");
-        body.put("destroyer1", destroyer1);
-
-        List<String> destroyer2 = Arrays.asList("E0", "E1");
-        body.put("destroyer2", destroyer2);
-
-        List<String> submarine1 = Arrays.asList("F0");
-        body.put("submarine1", submarine1);
-
-        List<String> submarine2 = Arrays.asList("G0");
-        body.put("submarine2", submarine2);
-
-        String requestBodyJson = new ObjectMapper().writeValueAsString(body);
-
-        MockHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders
-                .post("/matches/battleship/add")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBodyJson);
-
-        mockMvc.perform(requestBuilder)
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON));
-
-
+    @AfterEach
+    @DisplayName("")
+    void end() {
+        this.userDAO.deleteAll();
     }
 
 
