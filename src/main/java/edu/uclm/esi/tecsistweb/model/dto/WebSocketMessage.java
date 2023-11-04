@@ -5,8 +5,6 @@ import lombok.Data;
 @Data
 public class WebSocketMessage {
 
-
-    private String INDENT;
     private String type;
     private String name;
     private String receiver;
