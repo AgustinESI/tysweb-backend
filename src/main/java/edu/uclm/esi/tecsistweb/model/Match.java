@@ -20,6 +20,7 @@ public class Match {
     private List<User> players = new ArrayList<>();
     @JsonIgnore
     private User currentUser;
+    private Game game;
 
     public void addUser(User user) {
         players.add(user);

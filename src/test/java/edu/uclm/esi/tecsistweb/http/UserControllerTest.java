@@ -154,7 +154,7 @@ public class UserControllerTest {
                 andExpect(status().isCreated());
 
         jso = new JSONObject().
-                put("pwd", pwd1).
+                put("pwd1", pwd1).
                 put("email", email);
 
         request = MockMvcRequestBuilders.

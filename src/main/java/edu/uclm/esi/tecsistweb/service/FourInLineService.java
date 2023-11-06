@@ -1,64 +1,34 @@
 package edu.uclm.esi.tecsistweb.service;
 
 import edu.uclm.esi.tecsistweb.model.Board;
+import edu.uclm.esi.tecsistweb.model.FourInLine;
 import edu.uclm.esi.tecsistweb.model.Match;
-import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
 import edu.uclm.esi.tecsistweb.repository.UserDAO;
-import lombok.Setter;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-public class MatchesService extends HelperService {
+public class FourInLineService extends HelperService {
 
     @Autowired
     private UserDAO userDAO;
+    @Autowired
+    @Getter
+    private WaittingRoom waittingRoom;
 
     private char winner = '0';
 
 
-    @Setter
-    private Map<String, Match> matchs = new HashMap<String, Match>();
-    @Setter
-    private List<Match> pending_matchs = new ArrayList<>();
-
-    public Match newMatch(String id_user, int numberBoards, int col, int row) {
-
-        Optional<User> optUser = this.userDAO.findById(id_user);
-        Match match = new Match();
-
-        if (optUser.isPresent()) {
-            if (pending_matchs.isEmpty()) {
-
-                for (int k = 0; k < numberBoards; k++) {
-                    Board board = new Board(col, row);
-
-                    for (int i = 0; i < board.getBoard().length; i++) {
-                        for (int j = 0; j < board.getBoard()[i].length; j++) {
-                            board.getBoard()[i][j] = '0';
-                        }
-                    }
-                    match.getBoardList().add(board);
-                }
-                pending_matchs.add(match);
-            } else {
-                match = this.pending_matchs.remove(0);
-                match.start();
-                this.matchs.put(match.getId_match(), match);
-            }
-        } else {
-            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
-        }
-
-        match.addUser(optUser.get());
-
-        return match;
+    public Match newMatch(String id_user, Class<?> type) {
+        return waittingRoom.playMatch(id_user, type);
     }
 
 
@@ -86,7 +56,7 @@ public class MatchesService extends HelperService {
         char color = body.get("color").toString().charAt(0);
 
 
-        Match match = matchs.get(id_match);
+        Match match = this.waittingRoom.getCurrent_matchs().get(id_match);
         Board board = null;
         boolean set = false;
 
@@ -123,7 +93,7 @@ public class MatchesService extends HelperService {
             throw new TySWebException(HttpStatus.FORBIDDEN, new Exception("The column is alredy fill"));
         }
 
-        out = board.comprobarGanador();
+        out = board.checkWinner();
         if (out) {
             match.setEnd(Boolean.TRUE);
         }
@@ -136,7 +106,7 @@ public class MatchesService extends HelperService {
             throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("Empty ID Match"));
         }
 
-        Match match = matchs.get(id_match);
+        Match match = this.waittingRoom.getCurrent_matchs().get(id_match);
 
         if (match == null) {
             throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no match with id: " + id_match));
@@ -146,7 +116,7 @@ public class MatchesService extends HelperService {
 
     public Boolean requestTurn(String idMatch, String idUser) {
 
-        if (matchs.get(idMatch) != null) {
+        if (this.waittingRoom.getCurrent_matchs().get(idMatch) != null) {
             return true;
         }
 

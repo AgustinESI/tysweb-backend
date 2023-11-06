@@ -1,8 +1,9 @@
 package edu.uclm.esi.tecsistweb.http;
 
+import edu.uclm.esi.tecsistweb.model.FourInLine;
 import edu.uclm.esi.tecsistweb.model.Match;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
-import edu.uclm.esi.tecsistweb.service.MatchesService;
+import edu.uclm.esi.tecsistweb.service.FourInLineService;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +17,10 @@ import java.util.Map;
 public class MatchesController {
 
     @Autowired
-    private MatchesService matchService;
+    private FourInLineService matchService;
 
     @GetMapping("/4line/start")
-    public Match start4InALine(HttpSession session) {
+    public Match startFourInLine(HttpSession session) {
 
         if (StringUtils.isBlank((String) session.getAttribute("id_user"))) {
             throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no user ID in session"));
@@ -27,11 +28,11 @@ public class MatchesController {
 
         String id_user = session.getAttribute("id_user").toString();
 
-        return this.matchService.newMatch(id_user, 1, 6, 7);
+        return this.matchService.newMatch(id_user, FourInLine.class);
     }
 
     @PostMapping("/4line/add")
-    public Object add4InALine(HttpSession session, @RequestBody Map<String, Object> body) {
+    public Object addFourInLine(HttpSession session, @RequestBody Map<String, Object> body) {
 
         if (StringUtils.isBlank((String) session.getAttribute("id_user"))) {
             throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no user ID in session"));
