@@ -25,6 +25,7 @@ public class User {
     @JsonIgnore
     private String pwd;
 
+
     public void setPwd(String pwd) {
         this.pwd = DigestUtils.sha512Hex(pwd);
     }

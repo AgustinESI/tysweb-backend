@@ -13,14 +13,11 @@ public class Match {
 
 
     private String id_match = UUID.randomUUID().toString();
-    private String winner;
-    @JsonIgnore
-    private boolean end = false;
+    private User winner;
     private List<Board> boardList = new ArrayList<>();
     private List<User> players = new ArrayList<>();
     @JsonIgnore
     private User currentUser;
-    private Game game;
 
     public void addUser(User user) {
         players.add(user);
@@ -30,7 +27,7 @@ public class Match {
         this.currentUser = this.players.get(new Random().nextInt(this.players.size()));
     }
 
-    public void getTurn(){
+    public void passTurn(){
         for (User user: players){
             if (!user.getId().equals(this.currentUser.getId())){
                 this.currentUser = user;

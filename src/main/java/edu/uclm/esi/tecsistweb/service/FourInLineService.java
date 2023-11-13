@@ -3,6 +3,7 @@ package edu.uclm.esi.tecsistweb.service;
 import edu.uclm.esi.tecsistweb.model.Board;
 import edu.uclm.esi.tecsistweb.model.FourInLine;
 import edu.uclm.esi.tecsistweb.model.Match;
+import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
 import edu.uclm.esi.tecsistweb.repository.UserDAO;
 import lombok.Getter;
@@ -79,7 +80,7 @@ public class FourInLineService extends HelperService {
                     if (board.getBoard()[i][col] == '0' && !set) {
                         board.getBoard()[i][col] = color;
                         set = true;
-                        match.getTurn();
+                        match.passTurn();
                     }
                 }
             } else {
@@ -95,7 +96,8 @@ public class FourInLineService extends HelperService {
 
         out = board.checkWinner();
         if (out) {
-            match.setEnd(Boolean.TRUE);
+            User winner = userDAO.findById(id_user).get();
+            match.setWinner(winner);
         }
         return out;
     }
@@ -115,12 +117,9 @@ public class FourInLineService extends HelperService {
     }
 
     public Boolean requestTurn(String idMatch, String idUser) {
-
         if (this.waittingRoom.getCurrent_matchs().get(idMatch) != null) {
             return true;
         }
-
         return false;
-
     }
 }

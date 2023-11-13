@@ -70,13 +70,13 @@ public class UserController {
     public ResponseEntity<?> deleteAccount(HttpSession session, @RequestParam boolean response) {
 
         if (response) {
-            System.out.println("[INFO] user_id" + session.getAttribute("user_id"));
-            String user_id = session.getAttribute("user_id").toString();
+            System.out.println("[INFO] user_id" + session.getAttribute("id_user"));
+            String user_id = session.getAttribute("id_user").toString();
             this.userService.delete(user_id);
             session.invalidate();
             return ResponseEntity.status(HttpStatus.ACCEPTED).body("User deleted");
         } else {
-            session.removeAttribute("user_id");
+            session.removeAttribute("id_user");
             return ResponseEntity.status(HttpStatus.OK).body("User not deleted");
         }
     }

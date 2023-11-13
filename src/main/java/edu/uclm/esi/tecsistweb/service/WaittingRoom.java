@@ -31,39 +31,43 @@ public class WaittingRoom {
     public Match playMatch(String id_user, Class<?> type) {
         Optional<User> optUser = this.userDAO.findById(id_user);
 
-        Match out = new Match();
-        int numberBoards = 0;
-
         if (!optUser.isPresent()) {
             throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
         }
 
+        Match out = new Match();
+
         if (this.pending_matchs.isEmpty()) {
             if (type == FourInLine.class) {
-                numberBoards = 1;
-
-                for (int k = 0; k < numberBoards; k++) {
-                    FourInLine board = new FourInLine();
-                    out.getBoardList().add(board);
-                }
+                FourInLine board = new FourInLine();
+                out.getBoardList().add(board);
             }
 
             //TODO: add the other game
 
+            out.addUser(optUser.get());
             this.getPending_matchs().add(out);
 
         } else {
             for (int i = 0; i <= this.pending_matchs.size(); i++) {
                 Match _match = this.pending_matchs.get(i);
-                if (_match.getBoardList() !=null && !_match.getBoardList().isEmpty() && _match.getBoardList().get(0).getClass().getName().equalsIgnoreCase(type.getName())) {
+                if (_match.getBoardList() !=null && !_match.getBoardList().isEmpty()
+                        && _match.getBoardList().get(0).getClass().getName().equalsIgnoreCase(type.getName())) {
+
+                    // Para no introducir dos veces el mismo usuario, al recargar la pantalla.
+                    for (User user: _match.getPlayers()){
+                        if (user.getId().equals(id_user)){
+                            return _match;
+                        }
+                    }
+
                     out = this.pending_matchs.remove(i);
+                    out.addUser(optUser.get());
                     out.start();
                     this.current_matchs.put(out.getId_match(), out);
                 }
             }
         }
-
-        out.addUser(optUser.get());
         return out;
     }
 

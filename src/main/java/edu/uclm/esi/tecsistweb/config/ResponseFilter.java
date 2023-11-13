@@ -12,6 +12,14 @@ import java.io.IOException;
 @Component
 public class ResponseFilter extends OncePerRequestFilter {
 
+    /**
+     * Peticiones CORS, cuando entra una petición HTTP, pasa por el filtro, SI O SI
+     * @param request
+     * @param response
+     * @param filterChain
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         if (request.getHeader("origin") != null) {
