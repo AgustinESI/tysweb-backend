@@ -5,6 +5,7 @@ import edu.uclm.esi.tecsistweb.model.Match;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
 import edu.uclm.esi.tecsistweb.service.FourInLineService;
 import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("matches")
+@Slf4j
 public class MatchesController {
 
     @Autowired
@@ -37,11 +39,10 @@ public class MatchesController {
         }
 
         String id_user = session.getAttribute("id_user").toString();
-        if (this.matchService.add(body, id_user)) {
-            return "The end of the game";
-        } else {
-            return this.matchService.getMatch(body.get("id_match").toString());
-        }
+        this.matchService.add(body, id_user);
+
+        return this.matchService.getMatch(body.get("id_match").toString());
+
     }
 
 

@@ -58,6 +58,11 @@ public class FourInLineService extends HelperService {
 
 
         Match match = this.waittingRoom.getCurrent_matchs().get(id_match);
+
+        if (match.getWinner()!=null){
+            throw new TySWebException(HttpStatus.FORBIDDEN, new Exception("There is already a winner"));
+        }
+
         Board board = null;
         boolean set = false;
 

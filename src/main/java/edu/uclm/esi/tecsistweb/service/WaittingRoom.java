@@ -44,8 +44,10 @@ public class WaittingRoom {
             }
 
             //TODO: add the other game
-
-            out.addUser(optUser.get());
+            User user = optUser.get();
+            user.setColor("R");
+            user.setImage();
+            out.addUser(user);
             this.getPending_matchs().add(out);
 
         } else {
@@ -62,7 +64,9 @@ public class WaittingRoom {
                     }
 
                     out = this.pending_matchs.remove(i);
-                    out.addUser(optUser.get());
+                    User user = optUser.get();
+                    user.setColor("Y");
+                    out.addUser(user);
                     out.start();
                     this.current_matchs.put(out.getId_match(), out);
                 }
