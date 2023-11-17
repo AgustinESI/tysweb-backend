@@ -1,6 +1,7 @@
 package edu.uclm.esi.tecsistweb.service;
 
 import edu.uclm.esi.tecsistweb.model.FourInLine;
+import edu.uclm.esi.tecsistweb.model.MasterMind;
 import edu.uclm.esi.tecsistweb.model.Match;
 import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
@@ -36,17 +37,17 @@ public class WaittingRoom {
         }
 
         Match out = new Match();
+        User user = optUser.get();
 
         if (this.pending_matchs.isEmpty()) {
             if (type == FourInLine.class) {
                 FourInLine board = new FourInLine();
                 out.getBoardList().add(board);
+                user.setColor("R");
+            }else if (type == MasterMind.class){
+                MasterMind board = new MasterMind();
+                out.getBoardList().add(board);
             }
-
-            //TODO: add the other game
-            User user = optUser.get();
-            user.setColor("R");
-            user.setImage();
             out.addUser(user);
             this.getPending_matchs().add(out);
 
@@ -57,15 +58,14 @@ public class WaittingRoom {
                         && _match.getBoardList().get(0).getClass().getName().equalsIgnoreCase(type.getName())) {
 
                     // Para no introducir dos veces el mismo usuario, al recargar la pantalla.
-                    for (User user: _match.getPlayers()){
-                        if (user.getId().equals(id_user)){
+                    for (User _user: _match.getPlayers()){
+                        if (_user.getId().equals(id_user)){
                             return _match;
                         }
                     }
-
                     out = this.pending_matchs.remove(i);
-                    User user = optUser.get();
-                    user.setColor("Y");
+                    if (type == FourInLine.class)
+                        user.setColor("Y");
                     out.addUser(user);
                     out.start();
                     this.current_matchs.put(out.getId_match(), out);

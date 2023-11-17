@@ -14,4 +14,8 @@ public abstract class Board {
     public boolean checkWinner() {
         return this.checkWinner();
     }
+
+    public void doMovement(Object obj){
+        this.doMovement(obj);
+    }
 }

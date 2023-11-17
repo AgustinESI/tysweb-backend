@@ -73,9 +73,6 @@ public class FourInLine extends Board implements Game {
         return out;
     }
 
-    @Override
-    public Board doMovement() {
-        return null;
-    }
+
 
 }

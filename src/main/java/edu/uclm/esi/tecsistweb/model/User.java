@@ -33,20 +33,18 @@ public class User {
     @Transient
     private String image;
 
-
-    public void setPwd(String pwd) {
-        this.pwd = DigestUtils.sha512Hex(pwd);
-    }
-
-    public void setImage() {
+    public User(){
         List<String> images = new ArrayList<>();
         images.add("https://icons.iconarchive.com/icons/iconarchive/incognito-animal-2/256/Dog-icon.png");
         images.add("https://icons.iconarchive.com/icons/iconarchive/incognito-animal-2/256/Cat-icon.png");
         images.add("https://icons.iconarchive.com/icons/iconarchive/incognito-animal-2/256/Panda-icon.png");
         images.add("https://icons.iconarchive.com/icons/iconarchive/incognito-animal-2/256/Lion-icon.png");
         images.add("https://icons.iconarchive.com/icons/iconarchive/incognito-animal-2/256/Pig-icon.png");
-        images.add("https://icons.iconarchive.com/icons/iconarchive/incognito-animal-2/256/Cocodrile-icon.png");
+        images.add("https://icons.iconarchive.com/icons/iconarchive/incognito-animal-2/256/Crocodile-icon.png");
         images.add("https://icons.iconarchive.com/icons/iconarchive/incognito-animal-2/256/Mouse-icon.png");
         this.image = images.get(new Random().nextInt(images.size()));
+    }
+    public void setPwd(String pwd) {
+        this.pwd = DigestUtils.sha512Hex(pwd);
     }
 }
