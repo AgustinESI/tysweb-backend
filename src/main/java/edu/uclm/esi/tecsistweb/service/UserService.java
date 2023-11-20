@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
-import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -42,6 +42,7 @@ public class UserService extends HelperService {
         user.setEmail(email);
         user.setName(name);
         user.setPwd(pwd);
+        user.setImage("images\\default.png");
 
         try {
             response = this.userDAO.save(user);
@@ -70,11 +71,13 @@ public class UserService extends HelperService {
 
         user = this.userDAO.findByEmailAndPwd(email, pwd);
         if (user == null) {
-            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User nor found"));
+            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
         }
 
         return user;
     }
+    public Optional<User> getUser(String user_id){
+        return this.userDAO.findById(user_id); }
 
     public void delete(String user_id) {
         this.userDAO.deleteById(user_id);

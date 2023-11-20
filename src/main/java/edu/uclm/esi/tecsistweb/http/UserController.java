@@ -7,12 +7,15 @@ import jakarta.servlet.http.HttpSession;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.*;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("users")
@@ -33,6 +36,46 @@ public class UserController {
 
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
+    @GetMapping("/{id}")
+    public User getUserDetails(@PathVariable String id) {
+        Optional<User> optUser = userService.getUser(id);
+        return optUser.get();
+    }
+    @GetMapping("/{user_id}/image")
+    public ResponseEntity<byte[]> getUserImage(@PathVariable("user_id") String user_id) throws IOException {
+        Optional<User> userOptional = userService.getUser(user_id);
+
+        String projectPath = System.getProperty("user.dir");
+        String imagePath = userOptional.get().getImage();
+        String absoluteImagePath = projectPath + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + imagePath;
+
+
+        if (absoluteImagePath != null) {
+            try {
+                File imageFile = new File(absoluteImagePath);
+
+                // Verificar si el archivo existe
+                if (imageFile.exists() && imageFile.isFile()) {
+                    FileInputStream fileInputStream = new FileInputStream(imageFile);
+                    byte[] imageBytes = fileInputStream.readAllBytes();
+                    fileInputStream.close();
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.IMAGE_PNG);
+
+                    return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
 
     @PutMapping("/login")
     public User login(HttpSession session, @RequestBody Map<String, String> body) {

@@ -39,7 +39,7 @@ public class UserServiceTest {
     })
     @DisplayName("Register - Name null and short - TySWebException - The name is too short")
     @Order(1)
-    void test1(String name, String email, String pwd1, String pwd2) {
+    void test1(String name, String email, String pwd1, String pwd2, String image) {
         User user = new User();
         user.setName(name);
         user.setPwd(pwd1);
