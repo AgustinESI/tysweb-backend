@@ -5,9 +5,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.apache.commons.codec.digest.DigestUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 @Data
@@ -32,7 +29,7 @@ public class User {
     private String color;
     @Column(nullable = false)
     @JsonIgnore
-    private String image;
+    private String image = "images\\default.png";
 
     public void setPwd(String pwd) {
         this.pwd = DigestUtils.sha512Hex(pwd);

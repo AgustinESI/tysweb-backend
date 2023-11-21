@@ -15,7 +15,11 @@ public abstract class Board {
         return this.checkWinner();
     }
 
-    public void doMovement(Object obj){
+    public void doMovement(Object obj) {
         this.doMovement(obj);
+    }
+
+    public boolean add(Match match, String combination) {
+        return this.add(match, combination);
     }
 }

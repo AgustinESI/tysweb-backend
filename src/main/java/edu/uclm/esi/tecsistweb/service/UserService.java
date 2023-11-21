@@ -42,7 +42,6 @@ public class UserService extends HelperService {
         user.setEmail(email);
         user.setName(name);
         user.setPwd(pwd);
-        user.setImage("images\\default.png");
 
         try {
             response = this.userDAO.save(user);

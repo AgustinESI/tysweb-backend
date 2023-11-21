@@ -1,5 +1,8 @@
 package edu.uclm.esi.tecsistweb.model;
 
+import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
+import org.springframework.http.HttpStatus;
+
 import java.util.Arrays;
 
 public class FourInLine extends Board implements Game {
@@ -73,6 +76,33 @@ public class FourInLine extends Board implements Game {
         return out;
     }
 
+
+    @Override
+    public boolean add(Match match, String combination) {
+        Board board = null;
+        boolean set = false;
+        boolean out = false;
+
+        int col = Integer.parseInt(combination);
+
+        board = match.getBoardList().get(0);
+
+        for (int i = board.getBoard().length - 1; i >= 0; i--) {
+            if (board.getBoard()[i][col] == '0' && !set) {
+                board.getBoard()[i][col] = match.getCurrentUser().getColor().charAt(0);
+                set = true;
+                match.passTurn();
+            }
+        }
+
+        if (!set) {
+            throw new TySWebException(HttpStatus.FORBIDDEN, new Exception("The column is alredy fill"));
+        }
+
+        out = board.checkWinner();
+
+        return out;
+    }
 
 
 }

@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MasterMindServiceTest {
     @Autowired
-    private MasterMindService matchesService;
+    private MatchesService matchesService;
 
     @Autowired
     private UserDAO userDAO;
@@ -42,6 +42,7 @@ public class MasterMindServiceTest {
         _user.setPwd(pwd);
         _user.setEmail(email);
         user1 = userDAO.save(_user);
+        user1.setColor("R");
 
         name = "mastermind2-service.tsyweb";
         email = "mastermind2-service@alu.uclm.es";
@@ -52,10 +53,11 @@ public class MasterMindServiceTest {
         _user.setPwd(pwd);
         _user.setEmail(email);
         user2 = userDAO.save(_user);
+        user2.setColor("Y");
 
 
         String id_user = user1.getId();
-        Match match = this.matchesService.newMatch(id_user, MasterMind.class);
+        Match match = this.matchesService.start(id_user, MasterMind.class.getSimpleName());
         assertFalse(match.getId_match().isBlank());
         assertTrue(match.getPlayers().contains(user1));
 
@@ -68,7 +70,7 @@ public class MasterMindServiceTest {
 
         String id_user = "1";
 
-        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.newMatch(id_user, MasterMind.class));
+        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.start(id_user, MasterMind.class.getSimpleName()));
 
         String expectedMessage = "User not found";
         String actualMessage = exception.getMessage();
@@ -82,7 +84,7 @@ public class MasterMindServiceTest {
 
         String id_user = user2.getId();
 
-        Match match = this.matchesService.newMatch(id_user, MasterMind.class);
+        Match match = this.matchesService.start(id_user, MasterMind.class.getSimpleName());
 
         assertFalse(match.getId_match().isBlank());
         assertTrue(match.getPlayers().contains(user2));

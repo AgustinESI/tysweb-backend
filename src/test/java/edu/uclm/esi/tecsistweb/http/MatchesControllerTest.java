@@ -1,5 +1,6 @@
 package edu.uclm.esi.tecsistweb.http;
 
+import edu.uclm.esi.tecsistweb.model.FourInLine;
 import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.repository.UserDAO;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -60,26 +61,27 @@ public class MatchesControllerTest {
     }
 
     @Test
-    @DisplayName("/matches/4line/start - User null - TySWebException")
+    @DisplayName("/matches/start - User null - TySWebException")
     @Order(1)
     void tes1() throws Exception {
 
         RequestBuilder request = MockMvcRequestBuilders.
-                get("/matches/4line/start").
+                get("/matches/start/" + FourInLine.class.getSimpleName()).
                 contentType(MediaType.APPLICATION_JSON)
                 .session(session);
+        session.clearAttributes();
         this.server.perform(request).
-                andExpect(status().isNotFound());
+                andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("/matches/4line/start - User not found - TySWebException")
+    @DisplayName("/matches/start - User not found - TySWebException")
     @Order(2)
     void tes2() throws Exception {
         session.setAttribute("id_user", "1");
 
         RequestBuilder request = MockMvcRequestBuilders.
-                get("/matches/4line/start").
+                get("/matches/start/" + FourInLine.class.getSimpleName()).
                 contentType(MediaType.APPLICATION_JSON)
                 .session(session);
         this.server.perform(request).
@@ -90,7 +92,7 @@ public class MatchesControllerTest {
     @CsvSource({
             "matches-controller@alu.uclm.es, 123456",
     })
-    @DisplayName("/matches/4line/start - User not found - TySWebException")
+    @DisplayName("/matches/start - User not found - TySWebException")
     @Order(3)
     void tes3(String email, String pwd) throws Exception {
 
@@ -99,7 +101,7 @@ public class MatchesControllerTest {
         session.setAttribute("id_user", u.getId());
 
         RequestBuilder request = MockMvcRequestBuilders.
-                get("/matches/4line/start").
+                get("/matches/start/" + FourInLine.class.getSimpleName()).
                 contentType(MediaType.APPLICATION_JSON)
                 .session(session);
         this.server.perform(request).
@@ -107,19 +109,17 @@ public class MatchesControllerTest {
     }
 
     @Test
-    @DisplayName("/matches/4line/start - User id null - TySWebException")
+    @DisplayName("/matches/start - User id null - TySWebException")
     @Order(4)
     void tes4() throws Exception {
 
 
         JSONObject jso = new JSONObject().
                 put("id_match", "").
-                put("id_board", "").
-                put("col", "").
-                put("color", "");
+                put("combination", "");
 
         RequestBuilder request = MockMvcRequestBuilders.
-                post("/matches/4line/add").
+                post("/matches/add").
                 contentType(MediaType.APPLICATION_JSON)
                 .content(jso.toString())
                 .session(session);
@@ -129,21 +129,19 @@ public class MatchesControllerTest {
 
 
     @Test
-    @DisplayName("/matches/4line/start - User not found - TySWebException")
+    @DisplayName("/matches/start - User not found - TySWebException")
     @Order(5)
     void tes5() throws Exception {
 
 
         JSONObject jso = new JSONObject().
                 put("id_match", "").
-                put("id_board", "").
-                put("col", "").
-                put("color", "");
+                put("combination", "");
 
         session.setAttribute("id_user", "1");
 
         RequestBuilder request = MockMvcRequestBuilders.
-                post("/matches/4line/add").
+                post("/matches/add").
                 contentType(MediaType.APPLICATION_JSON)
                 .session(session)
                 .content(jso.toString());
@@ -154,14 +152,14 @@ public class MatchesControllerTest {
 
     @ParameterizedTest
     @CsvSource({
-            ", 1, 0, R",
-            "1, , 0, R",
-            "1, 1, , R",
-            "1, 1, 0, ",
+            ", 1, 0",
+            "1, , 0",
+            "1, 1, ",
+            "1, 1, 0",
     })
-    @DisplayName("/matches/4line/start - User not found - TySWebException")
+    @DisplayName("/matches/start - User not found - TySWebException")
     @Order(6)
-    void tes6(String id_match, String id_board, String col, String color) throws Exception {
+    void tes6(String id_match, String id_board, String combination) throws Exception {
 
 
         User u = userDAO.findByEmailAndPwd("matches-controller@alu.uclm.es", DigestUtils.sha512Hex("123456"));
@@ -171,16 +169,12 @@ public class MatchesControllerTest {
                 put("id_match", id_match).
                 put("id_board", id_board);
 
-        if (StringUtils.isNotBlank(col)) {
-            jso.put("col", Integer.parseInt(col));
-        }
-
-        if (StringUtils.isNotBlank(color)) {
-            jso.put("color", color.charAt(0));
+        if (StringUtils.isNotBlank(combination)) {
+            jso.put("combination", Integer.parseInt(combination));
         }
 
         RequestBuilder request = MockMvcRequestBuilders.
-                post("/matches/4line/add").
+                post("/matches/add").
                 contentType(MediaType.APPLICATION_JSON)
                 .content(jso.toString())
                 .session(session);

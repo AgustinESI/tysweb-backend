@@ -231,7 +231,7 @@ public class UserControllerTest {
         String jsonResponse = result.getResponse().getContentAsString();
         JsonNode jsonNode = new ObjectMapper().readTree(jsonResponse);
 
-        session.setAttribute("user_id", jsonNode.get("id").asText());
+        session.setAttribute("id_user", jsonNode.get("id").asText());
 
 
         request = MockMvcRequestBuilders.

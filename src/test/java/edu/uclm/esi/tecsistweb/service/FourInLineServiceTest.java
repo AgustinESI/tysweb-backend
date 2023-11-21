@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class FourInLineServiceTest {
 
     @Autowired
-    private FourInLineService matchesService;
+    private MatchesService matchesService;
 
     @Autowired
     private UserDAO userDAO;
@@ -34,7 +34,7 @@ public class FourInLineServiceTest {
 
     @BeforeEach
     @DisplayName("New Match - 4 In a Line - Returns Match")
-    void newMatch() {
+    void start() {
 
 
         String name = "fourinline1-service.tsyweb";
@@ -46,6 +46,7 @@ public class FourInLineServiceTest {
         _user.setPwd(pwd);
         _user.setEmail(email);
         user1 = userDAO.save(_user);
+        user1.setColor("R");
 
         name = "fourinline2-service.tsyweb";
         email = "fourinline2-service@alu.uclm.es";
@@ -56,10 +57,10 @@ public class FourInLineServiceTest {
         _user.setPwd(pwd);
         _user.setEmail(email);
         user2 = userDAO.save(_user);
-
+        user2.setColor("Y");
 
         String id_user = user1.getId();
-        Match match = this.matchesService.newMatch(id_user, FourInLine.class);
+        Match match = this.matchesService.start(id_user, FourInLine.class.getSimpleName());
         assertFalse(match.getId_match().isBlank());
         assertTrue(match.getPlayers().contains(user1));
 
@@ -73,7 +74,7 @@ public class FourInLineServiceTest {
 
         String id_user = "1";
 
-        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.newMatch(id_user, FourInLine.class));
+        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.start(id_user, FourInLine.class.getSimpleName()));
 
         String expectedMessage = "User not found";
         String actualMessage = exception.getMessage();
@@ -88,7 +89,7 @@ public class FourInLineServiceTest {
 
         String id_user = user2.getId();
 
-        Match match = this.matchesService.newMatch(id_user, FourInLine.class);
+        Match match = this.matchesService.start(id_user, FourInLine.class.getSimpleName());
 
         assertFalse(match.getId_match().isBlank());
         assertTrue(match.getPlayers().contains(user2));
@@ -101,12 +102,10 @@ public class FourInLineServiceTest {
     @DisplayName("Add - Null ID Match - You have to add an ID of the game")
     void test3() {
 
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
 
         Map<String, Object> body = new HashMap<>();
-        body.put("id_board", match.getBoardList().get(0).getId_board());
         body.put("col", 0);
-        body.put("color", "R");
 
         TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, user1.getId()));
 
@@ -122,61 +121,15 @@ public class FourInLineServiceTest {
     @DisplayName("Add - Empty ID Match - You have to add an ID of the game")
     void test4() {
 
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
 
         Map<String, Object> body = new HashMap<>();
         body.put("id_match", "");
-        body.put("id_board", match.getBoardList().get(0).getId_board());
         body.put("col", 0);
-        body.put("color", "R");
 
         TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, user1.getId()));
 
         String expectedMessage = "You have to add an ID of the game";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-    }
-
-
-    @Test
-    @Order(5)
-    @DisplayName("Add - Null ID Board - You have to add an ID of the board")
-    void test5() {
-
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
-
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("id_match", match.getId_match());
-        body.put("col", 0);
-        body.put("color", "R");
-
-        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, user1.getId()));
-
-        String expectedMessage = "You have to add an ID of the board";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-    }
-
-
-    @Test
-    @Order(6)
-    @DisplayName("Add - Empty ID Board - You have to add an ID of the board")
-    void test6() {
-
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("id_match", match.getId_match());
-        body.put("id_board", "");
-        body.put("col", 0);
-        body.put("color", "R");
-
-        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, user1.getId()));
-
-        String expectedMessage = "You have to add an ID of the board";
         String actualMessage = exception.getMessage();
         assertEquals(expectedMessage, actualMessage);
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
@@ -187,16 +140,14 @@ public class FourInLineServiceTest {
     @DisplayName("Add - Null Cols - You have to add a number for column")
     void test7() {
 
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
 
         Map<String, Object> body = new HashMap<>();
         body.put("id_match", match.getId_match());
-        body.put("id_board", match.getBoardList().get(0).getId_board());
-        body.put("color", "R");
 
-        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, user1.getId()));
+        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, match.getCurrentUser().getId()));
 
-        String expectedMessage = "You have to add a number for column";
+        String expectedMessage = "You have to add combination of the game";
         String actualMessage = exception.getMessage();
         assertEquals(expectedMessage, actualMessage);
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
@@ -207,16 +158,15 @@ public class FourInLineServiceTest {
     @DisplayName("Add - Null Color - You have to add a color")
     void test8() {
 
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
 
         Map<String, Object> body = new HashMap<>();
         body.put("id_match", match.getId_match());
-        body.put("id_board", match.getBoardList().get(0).getId_board());
-        body.put("col", 0);
+        body.put("combination", null);
 
         TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, user1.getId()));
 
-        String expectedMessage = "You have to add a color";
+        String expectedMessage = "You have to add combination of the game";
         String actualMessage = exception.getMessage();
         assertEquals(expectedMessage, actualMessage);
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
@@ -228,13 +178,11 @@ public class FourInLineServiceTest {
     @DisplayName("Add - Ilegal Movement - Ilegal movement, not your turn")
     void test9() {
 
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
 
         Map<String, Object> body = new HashMap<>();
         body.put("id_match", match.getId_match());
-        body.put("id_board", match.getBoardList().get(0).getId_board());
-        body.put("col", 0);
-        body.put("color", "R");
+        body.put("combination", 0);
 
         User user_fail;
         if (match.getCurrentUser().getId().equals(user1.getId())) {
@@ -258,16 +206,14 @@ public class FourInLineServiceTest {
     void test10() {
 
 
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
 
 
         Map<String, Object> body = new HashMap<>();
         body.put("id_match", "1");
-        body.put("id_board", match.getBoardList().get(0).getId_board());
-        body.put("col", 0);
-        body.put("color", "R");
+        body.put("combination", 0);
 
-        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, user1.getId()));
+        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, match.getCurrentUser().getId()));
 
         String expectedMessage = "There is no match with id: 1";
         String actualMessage = exception.getMessage();
@@ -276,44 +222,19 @@ public class FourInLineServiceTest {
     }
 
     @Test
-    @Order(11)
-    @DisplayName("Add - Board not found - There is no board with id: 1")
-    void test11() {
-
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("id_match", match.getId_match());
-        body.put("id_board", "1");
-        body.put("col", 0);
-        body.put("color", "R");
-
-
-        TySWebException exception = assertThrows(TySWebException.class, () -> this.matchesService.add(body, match.getCurrentUser().getId()));
-
-        String expectedMessage = "There is no board with id: 1";
-        String actualMessage = exception.getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
-    }
-
-
-    @Test
     @Order(12)
     @DisplayName("Add")
     void test12() {
 
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
 
         Map<String, Object> body = new HashMap<>();
         body.put("id_match", match.getId_match());
-        body.put("id_board", match.getBoardList().get(0).getId_board());
-        body.put("col", 0);
-        body.put("color", "R");
+        body.put("combination", 0);
 
 
-        boolean out = this.matchesService.add(body, match.getCurrentUser().getId());
-        assertFalse(out);
+        this.matchesService.add(body, match.getCurrentUser().getId());
+        assertNull(match.getWinner());
     }
 
 
@@ -322,13 +243,11 @@ public class FourInLineServiceTest {
     @DisplayName("Add - Fill column - The column is alredy fill")
     void test13() {
 
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
 
         Map<String, Object> body = new HashMap<>();
         body.put("id_match", match.getId_match());
-        body.put("id_board", match.getBoardList().get(0).getId_board());
-        body.put("col", 0);
-        body.put("color", "R");
+        body.put("combination", 0);
 
         char[][] board = match.getBoardList().get(0).getBoard();
 
@@ -354,25 +273,23 @@ public class FourInLineServiceTest {
     @DisplayName("Add - End game")
     void test14() {
 
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
 
         Map<String, Object> body = new HashMap<>();
         body.put("id_match", match.getId_match());
-        body.put("id_board", match.getBoardList().get(0).getId_board());
-        body.put("col", 0);
-        body.put("color", "R");
+        body.put("combination", 0);
 
         char[][] board = match.getBoardList().get(0).getBoard();
 
-        board[3][0] = 'R';
-        board[4][0] = 'R';
-        board[5][0] = 'R';
+        char color = match.getCurrentUser().getColor().charAt(0);
+        board[3][0] = color;
+        board[4][0] = color;
+        board[5][0] = color;
 
         match.getBoardList().get(0).setBoard(board);
 
-
-        boolean out = this.matchesService.add(body, match.getCurrentUser().getId());
-        assertTrue(out);
+        this.matchesService.add(body, match.getCurrentUser().getId());
+        assertNotNull(match.getWinner());
     }
 
 
@@ -420,9 +337,7 @@ public class FourInLineServiceTest {
     @DisplayName("Get Match")
     void test18() {
 
-
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
-
+        Match match = this.matchesService.start(user2.getId(), FourInLine.class.getSimpleName());
         Match _match = this.matchesService.getMatch(match.getId_match());
 
         assertFalse(_match.getId_match().isBlank());
@@ -431,31 +346,14 @@ public class FourInLineServiceTest {
         assertEquals(2, _match.getPlayers().size());
     }
 
-    @Test
-    @Order(19)
-    @DisplayName("Request Turn")
-    void test19() {
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
-        boolean out = this.matchesService.requestTurn(match.getId_match(), user2.getId());
-        assertTrue(out);
-    }
-
-    @Test
-    @Order(20)
-    @DisplayName("Request Turn")
-    void test20() {
-        Match match = this.matchesService.newMatch(user2.getId(), FourInLine.class);
-        boolean out = this.matchesService.requestTurn("", user1.getId());
-        assertFalse(out);
-    }
-
-
     @AfterEach
-    @DisplayName("")
+    @Order(19)
+    @DisplayName("Delete Users")
     void deleteUsers() {
         this.userDAO.deleteAll();
         this.matchesService.getWaittingRoom().setPending_matchs(new ArrayList<>());
         this.matchesService.getWaittingRoom().setCurrent_matchs(new HashMap<>());
     }
+
 
 }

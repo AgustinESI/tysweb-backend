@@ -1,11 +1,8 @@
 package edu.uclm.esi.tecsistweb.http;
 
-import edu.uclm.esi.tecsistweb.model.FourInLine;
-import edu.uclm.esi.tecsistweb.model.MasterMind;
 import edu.uclm.esi.tecsistweb.model.Match;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
-import edu.uclm.esi.tecsistweb.service.FourInLineService;
-import edu.uclm.esi.tecsistweb.service.MasterMindService;
+import edu.uclm.esi.tecsistweb.service.MatchesService;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -22,52 +19,30 @@ import java.util.Map;
 public class MatchesController {
 
     @Autowired
-    private FourInLineService fourInLineService;
-    @Autowired
-    private MasterMindService masterMindService;
-    @GetMapping("/4line/start")
-    public Match startFourInLine(HttpSession session) {
+    private MatchesService matchesService;
+
+    @GetMapping("/start/{game_type}")
+    public Match start(HttpSession session, @PathVariable String game_type) {
         if (StringUtils.isBlank((String) session.getAttribute("id_user"))) {
-            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no user ID in session"));
+            throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("There is no user ID in session"));
         }
+
         String id_user = session.getAttribute("id_user").toString();
-        return this.fourInLineService.newMatch(id_user, FourInLine.class);
+        return this.matchesService.start(id_user, game_type);
     }
 
-    @GetMapping("/mastermind/start")
-    public Match startMasterMind(HttpSession session) {
-        if (StringUtils.isBlank((String) session.getAttribute("id_user"))) {
-            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no user ID in session"));
-        }
-        String id_user = session.getAttribute("id_user").toString();
-        return this.masterMindService.newMatch(id_user, MasterMind.class);
-    }
 
-    @PostMapping("/mastermind/add")
-    public Match addMasterMind(HttpSession session, @RequestBody Map<String, Object> body){
+    @PostMapping("/add")
+    public Match add(HttpSession session, @RequestBody Map<String, Object> body) {
         if (StringUtils.isBlank((String) session.getAttribute("id_user"))) {
             throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no user ID in session"));
         }
 
         String id_user = session.getAttribute("id_user").toString();
-        this.masterMindService.add(body, id_user);
+        this.matchesService.add(body, id_user);
 
-        return this.masterMindService.getMatch(body.get("id_match").toString());
+        return this.matchesService.getMatch(body.get("id_match").toString());
     }
-    @PostMapping("/4line/add")
-    public Match addFourInLine(HttpSession session, @RequestBody Map<String, Object> body) {
-
-        if (StringUtils.isBlank((String) session.getAttribute("id_user"))) {
-            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no user ID in session"));
-        }
-
-        String id_user = session.getAttribute("id_user").toString();
-        this.fourInLineService.add(body, id_user);
-
-        return this.fourInLineService.getMatch(body.get("id_match").toString());
-
-    }
-
 
     @GetMapping("/board/{id_match}")
     public ResponseEntity getBoard(HttpSession session, @PathVariable String id_match) {
@@ -75,20 +50,7 @@ public class MatchesController {
         if (StringUtils.isBlank(id_match)) {
             throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("ID Match can not be empty"));
         }
-        return ResponseEntity.status(HttpStatus.OK).body(this.fourInLineService.getMatch(id_match));
-    }
-
-    @GetMapping("/request-turn/{id_match}")
-    public Boolean turn(HttpSession session, @PathVariable String id_match) {
-
-        if (StringUtils.isBlank((String) session.getAttribute("id_user"))) {
-            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no user ID in session"));
-        }
-
-        String id_user = session.getAttribute("id_user").toString();
-
-
-        return this.fourInLineService.requestTurn(id_match, id_user);
+        return ResponseEntity.status(HttpStatus.OK).body(this.matchesService.getMatch(id_match));
     }
 
 

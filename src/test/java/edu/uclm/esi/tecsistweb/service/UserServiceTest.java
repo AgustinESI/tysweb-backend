@@ -39,7 +39,7 @@ public class UserServiceTest {
     })
     @DisplayName("Register - Name null and short - TySWebException - The name is too short")
     @Order(1)
-    void test1(String name, String email, String pwd1, String pwd2, String image) {
+    void test1(String name, String email, String pwd1, String pwd2) {
         User user = new User();
         user.setName(name);
         user.setPwd(pwd1);
@@ -153,7 +153,7 @@ public class UserServiceTest {
             userService.login(email, pwd);
         });
 
-        String expectedMessage = "User nor found";
+        String expectedMessage = "User not found";
         String actualMessage = exception.getMessage();
         assertEquals(actualMessage, expectedMessage);
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
@@ -183,14 +183,11 @@ public class UserServiceTest {
     @Order(8)
     void test8(String name, String email, String pwd1, String pwd2) {
 
-        User user_saved = userService.register(name, email, pwd1, pwd2);
-        userService.delete(user_saved.getId());
-
         TySWebException exception = assertThrows(TySWebException.class, () -> {
             userService.login(email, pwd1);
         });
 
-        String expectedMessage = "User nor found";
+        String expectedMessage = "User not found";
         String actualMessage = exception.getMessage();
         assertEquals(actualMessage, expectedMessage);
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
