@@ -32,28 +32,17 @@ public class EmailSenderService extends HelperService {
     private String emailSender;
     @Value("${email.title.brevo}")
     private String titleEmailWelcome;
+    @Value("${tyswb.frontend.port}")
+    private String portFrontEnd;
 
     private static final String PATH_EMAIL_TEMPLATES = "email/";
-    private static final String URL_CONFIRMATION = "http://localhost:4200/verification";
+    private static final String URL_VERIFICATION = "/verification";
 
 
     public void sendEmailRegistration(User user, String file) {
         String body = "";
 
-        String url = "http://";
-
-        try {
-            try (final DatagramSocket socket = new DatagramSocket()) {
-                socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-                String ip = socket.getLocalAddress().getHostAddress();
-                url += ip;
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        url += ":4200/verification";
+        String url = generateURL(URL_VERIFICATION);
 
         try {
             ClassPathResource resource = new ClassPathResource(PATH_EMAIL_TEMPLATES + file);
@@ -78,7 +67,6 @@ public class EmailSenderService extends HelperService {
         headerRequest.put("content", " application/json");
         headerRequest.put("api-key", apikey);
 
-
         JSONObject sender = new JSONObject();
         sender.put("name", this.nameSender);
         sender.put("email", this.emailSender);
@@ -100,5 +88,21 @@ public class EmailSenderService extends HelperService {
         } catch (Exception e) {
             throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("Error while sending email"));
         }
+    }
+
+    private String generateURL(String url) {
+        String out = "http://";
+        try {
+            try (final DatagramSocket socket = new DatagramSocket()) {
+                socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+                String ip = socket.getLocalAddress().getHostAddress();
+                out += ip + ":" + this.portFrontEnd + url;
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return out;
     }
 }
