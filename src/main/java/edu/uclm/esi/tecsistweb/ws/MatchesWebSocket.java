@@ -55,11 +55,11 @@ public class MatchesWebSocket extends TextWebSocketHandler {
 
         log.info("[INFO] " + message.getPayload());
 
-        switch (session.getUri().toString()) {
-            case "ws://localhost:8080/ws-matches":
+        switch (session.getUri().getPath()) {
+            case "/ws-matches":
                 matchWSManage(session, message);
                 break;
-            case "ws://localhost:8080/ws-chat":
+            case "/ws-chat":
                 chatWSManage(session, message);
                 break;
         }
@@ -80,7 +80,7 @@ public class MatchesWebSocket extends TextWebSocketHandler {
             case GAME_SECOND_PLAYER_ADDED:
             case GAME_MOVEMENTS_MADE:
                 WebSocketSession webSocketSession = manager.getSessions_map_name().get(_message.getReceiver()).getSession();
-                if (webSocketSession.getUri().toString().equals("ws://localhost:8080/ws-matches")) {
+                if (webSocketSession.getUri().getPath().equals("/ws-matches")) {
                     JSONObject jso = new JSONObject();
                     jso.put("type", GAME_UPDATE_MATCH);
                     jso.put("id_math", _message.getId_match());

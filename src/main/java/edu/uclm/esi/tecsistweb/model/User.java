@@ -25,11 +25,15 @@ public class User {
     @Column(nullable = false)
     @JsonIgnore
     private String pwd;
+    @Column(nullable = false)
+    private boolean active = false;
     @Transient
     private String color;
     @Column(nullable = false)
     @JsonIgnore
     private String image = "images\\default.png";
+    private String city;
+    private String temperature;
 
     public void setPwd(String pwd) {
         this.pwd = DigestUtils.sha512Hex(pwd);

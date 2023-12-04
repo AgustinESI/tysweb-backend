@@ -73,12 +73,28 @@ public class UserService extends HelperService {
             throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
         }
 
+        if (!user.isActive()) {
+            throw new TySWebException(HttpStatus.UNAUTHORIZED, new Exception("User is not verified yet, please check your email"));
+        }
+
         return user;
     }
-    public Optional<User> getUser(String user_id){
-        return this.userDAO.findById(user_id); }
+
+    public Optional<User> getUser(String user_id) {
+        return this.userDAO.findById(user_id);
+    }
 
     public void delete(String user_id) {
         this.userDAO.deleteById(user_id);
+    }
+
+    public User activateAccount(User user) {
+        user.setActive(true);
+        this.userDAO.save(user);
+        return user;
+    }
+
+    public void saveUser(User user) {
+        this.userDAO.save(user);
     }
 }

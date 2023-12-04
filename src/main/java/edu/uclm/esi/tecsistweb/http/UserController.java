@@ -2,18 +2,24 @@ package edu.uclm.esi.tecsistweb.http;
 
 import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
+import edu.uclm.esi.tecsistweb.service.EmailSenderService;
+import edu.uclm.esi.tecsistweb.service.HelperService;
 import edu.uclm.esi.tecsistweb.service.UserService;
+import edu.uclm.esi.tecsistweb.service.WeatherService;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -21,26 +27,72 @@ import java.util.Optional;
 @RequestMapping("users")
 public class UserController {
 
-    @Autowired(required = true)
+    @Autowired()
     private UserService userService;
+    @Autowired
+    private WeatherService weatherService;
+    @Autowired
+    private EmailSenderService emailSenderService;
+
+    @Value("${email.send.register}")
+    private String sendEmailRegister;
 
     @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<User> register(@RequestBody Map<String, String> body) {
+    public ResponseEntity<User> register(HttpSession session, @RequestBody Map<String, String> body) {
 
         String name = body.get("name");
         String email = body.get("email");
         String pwd = body.get("pwd1");
         String pwd2 = body.get("pwd2");
 
+
+        String lat = body.get("lat");
+        String lon = body.get("lon");
+
         User user = this.userService.register(name, email, pwd, pwd2);
+
+        if (StringUtils.isNotBlank(lat) && StringUtils.isNotBlank(lon)) {
+            weatherService.getTemperature(user, lat, lon);
+        }
+
+        if (Boolean.parseBoolean(sendEmailRegister)) {
+            emailSenderService.sendEmailRegistration(user, HelperService.EMAIL_PATH.EMAIL_PATH_REGISTER_TEMPLATE.path());
+        } else {
+            user = this.userService.activateAccount(user);
+        }
+
+        session.setAttribute("id_user", user.getId());
 
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
+
+    @GetMapping(value = "/register/activate/{id}")
+    public ResponseEntity<User> getActivationAccount(@PathVariable String id) {
+        if (StringUtils.isNotBlank(id)) {
+            Optional<User> optUser = userService.getUser(id);
+            if (optUser.isPresent())
+                return new ResponseEntity<>(this.userService.activateAccount(optUser.get()), HttpStatus.OK);
+            else
+                throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
+        } else {
+            throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("ID user cannot be empty"));
+        }
+    }
+
     @GetMapping("/{id}")
     public User getUserDetails(@PathVariable String id) {
-        Optional<User> optUser = userService.getUser(id);
-        return optUser.get();
+        if (StringUtils.isNotBlank(id)) {
+            Optional<User> optUser = userService.getUser(id);
+            if (optUser.isPresent())
+                return optUser.get();
+            else
+                throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
+        } else {
+            throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("ID user cannot be empty"));
+        }
+
     }
+
     @GetMapping("/{user_id}/image")
     public ResponseEntity<byte[]> getUserImage(@PathVariable("user_id") String user_id) throws IOException {
         Optional<User> userOptional = userService.getUser(user_id);
@@ -77,7 +129,7 @@ public class UserController {
     }
 
 
-    @PutMapping("/login")
+    @PutMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public User login(HttpSession session, @RequestBody Map<String, String> body) {
 
         if (body.get("email") == null || StringUtils.isBlank(body.get("email").toString())) {
@@ -89,10 +141,16 @@ public class UserController {
         }
 
         String email = body.get("email");
+        String lat = body.get("lat");
+        String lon = body.get("lon");
         String pwd = DigestUtils.sha512Hex(body.get("pwd1").toString());
 
         User user = this.userService.login(email, pwd);
 
+        if (StringUtils.isNotBlank(lat) && StringUtils.isNotBlank(lon)) {
+            weatherService.getTemperature(user, lat, lon);
+            this.userService.saveUser(user);
+        }
         session.setAttribute("id_user", user.getId());
 
         return user;
