@@ -11,7 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 @Service
@@ -37,6 +44,7 @@ public class WaittingRoom {
         }
 
         Match out = new Match();
+        getImage(optUser);
         User user = optUser.get();
         boolean set = false;
 
@@ -104,6 +112,23 @@ public class WaittingRoom {
         }
 
         return out;
+    }
+    private void getImage(Optional<User> optUser){
+        try {
+            String projectPath = System.getProperty("user.dir");
+            String imagePath = optUser.get().getImage();
+            String absoluteImagePath = projectPath + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + imagePath;
+            byte[] imageBytes = Files.readAllBytes(Path.of(absoluteImagePath));
+
+            String[] fileParts = imagePath.split("\\."); // Dividir por el punto
+            String imageExtension = fileParts[fileParts.length - 1].toLowerCase();
+            String base64Image = "data:image/" + imageExtension + ";base64," + Base64.getEncoder().encodeToString(imageBytes);
+
+            optUser.get().setImage(base64Image);
+
+        }catch (Exception e) {
+            throw new TySWebException(HttpStatus.INTERNAL_SERVER_ERROR, new Exception("Cannot process the user image"));
+        }
     }
 
 }

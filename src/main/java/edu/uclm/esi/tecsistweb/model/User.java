@@ -30,7 +30,6 @@ public class User {
     @Transient
     private String color;
     @Column(nullable = false)
-    @JsonIgnore
     private String image = "images\\default.png";
     private String city;
     private String temperature;

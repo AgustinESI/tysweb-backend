@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 
@@ -83,9 +86,21 @@ public class UserController {
     public User getUserDetails(@PathVariable String id) {
         if (StringUtils.isNotBlank(id)) {
             Optional<User> optUser = userService.getUser(id);
-            if (optUser.isPresent())
+            if (optUser.isPresent()) {
+
+               /* try {
+                    String projectPath = System.getProperty("user.dir");
+                    String imagePath = optUser.get().getImage();
+                    String absoluteImagePath = projectPath + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + imagePath;
+                    byte[] imageBytes = Files.readAllBytes(Path.of(absoluteImagePath));
+
+                    String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                    optUser.get().setImage(base64Image);
+                } catch (Exception e) {
+                    throw new TySWebException(HttpStatus.INTERNAL_SERVER_ERROR, new Exception("Cannot process the user image"));
+                }*/
                 return optUser.get();
-            else
+            } else
                 throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
         } else {
             throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("ID user cannot be empty"));
