@@ -7,7 +7,6 @@ import java.util.List;
 
 @Data
 public class UserMatchDTO {
-
     private int total;
     private int win;
     private int lost;

@@ -73,7 +73,7 @@ public class MatchesController {
             for (Cookie cookie : cookies) {
                 String cookieName = cookie.getName();
                 String cookieValue = cookie.getValue();
-                if (cookieName.equals("id_user")) {
+                if (cookieName.equals("id_user") && StringUtils.isNotBlank(cookieValue)) {
                     session.setAttribute("id_user", cookieValue);
                     break;
                 }

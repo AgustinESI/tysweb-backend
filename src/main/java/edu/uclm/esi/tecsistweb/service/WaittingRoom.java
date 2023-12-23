@@ -39,7 +39,7 @@ public class WaittingRoom {
 
 
         Match out = new Match();
-//        getImage(cur);
+        getImage(user);
         user.setUserMatchesInfo(this.getUserMatchesInfo(user.getId()));
         boolean set = false;
 
@@ -110,10 +110,10 @@ public class WaittingRoom {
         return out;
     }
 
-    private void getImage(Optional<User> optUser) {
+    private void getImage(User user) {
         try {
             String projectPath = System.getProperty("user.dir");
-            String imagePath = optUser.get().getImage();
+            String imagePath = user.getImage();
             String absoluteImagePath = projectPath + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + imagePath;
             byte[] imageBytes = Files.readAllBytes(Path.of(absoluteImagePath));
 
@@ -121,7 +121,7 @@ public class WaittingRoom {
             String imageExtension = fileParts[fileParts.length - 1].toLowerCase();
             String base64Image = "data:image/" + imageExtension + ";base64," + Base64.getEncoder().encodeToString(imageBytes);
 
-            optUser.get().setImage(base64Image);
+            user.setImage(base64Image);
 
         } catch (Exception e) {
             throw new TySWebException(HttpStatus.INTERNAL_SERVER_ERROR, new Exception("Cannot process the user image"));
@@ -133,43 +133,41 @@ public class WaittingRoom {
         UserMatchDTO out = new UserMatchDTO();
         Optional<User> optUser = this.userDAO.findById(id_user);
 
-        if (!optUser.isPresent()) {
-            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
-        }
-        try {
-            User user = optUser.get();
+        if (optUser.isPresent()) {
+            try {
+                User user = optUser.get();
 
-            out.setTotal(user.getMatches().size());
-            out.setGames(new ArrayList<>());
-            Map<String, Integer> map = new HashMap<>();
+                out.setTotal(user.getMatches().size());
+                out.setGames(new ArrayList<>());
+                Map<String, Integer> map = new HashMap<>();
 
-            int win = 0;
-            int draw = 0;
-            for (Match match : user.getMatches()) {
-                if (match.getWinner() == null){
-                    draw++;
+                int win = 0;
+                int draw = 0;
+                for (Match match : user.getMatches()) {
+                    if (match.getWinner() == null){
+                        draw++;
+                    }
+                    if (match.getWinner()!=null && match.getWinner().getId().equals(id_user)) {
+                        win++;
+                    }
+                    if (map.get(match.getGameType()) == null) {
+                        map.put(match.getGameType(), 1);
+                    } else {
+                        map.put(match.getGameType(), map.get(match.getGameType()) + 1);
+                    }
                 }
-                if (match.getWinner()!=null && match.getWinner().getId().equals(id_user)) {
-                    win++;
+
+                for (Map.Entry<String, Integer> entry : map.entrySet()) {
+                    out.getGames().add(new GameMatchDTO(entry.getKey(), entry.getValue()));
                 }
-                if (map.get(match.getGameType()) == null) {
-                    map.put(match.getGameType(), 1);
-                } else {
-                    map.put(match.getGameType(), map.get(match.getGameType()) + 1);
-                }
+
+                out.setWin(win);
+                out.setDraw(draw);
+                out.setLost(out.getTotal() - out.getWin()- out.getDraw());
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            for (Map.Entry<String, Integer> entry : map.entrySet()) {
-                out.getGames().add(new GameMatchDTO(entry.getKey(), entry.getValue()));
-            }
-
-            out.setWin(win);
-            out.setDraw(draw);
-            out.setLost(out.getTotal() - out.getWin()- out.getDraw());
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
         return out;
     }
 

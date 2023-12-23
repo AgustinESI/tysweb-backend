@@ -42,7 +42,6 @@ public class MasterMind extends Board implements Game {
             for (int j = 0; j < super.getBoard()[i].length; j++) {
                 if (i == 0 && j < 6) {
                     super.getBoard()[i][j] = colors[new Random().nextInt(colors.length)].code;
-                    System.out.println(super.getBoard()[0]);
                 } else
                     super.getBoard()[i][j] = '-';
             }
