@@ -33,8 +33,10 @@ public class MatchesWebSocket extends TextWebSocketHandler {
 
     private static final String GAME_SECOND_PLAYER_ADDED = "GAME.SECOND.PLAYER.ADDED";
     private static final String GAME_MOVEMENTS_MADE = "GAME.MOVEMENTS.MADE";
+    private static final String GAME_LEFT_MATCH = "LEFT.MATCH";
     private static final String GAME_START = "GAME.START";
     private static final String GAME_UPDATE_MATCH = "GAME.UPDATE.MATCH";
+    private static final String GAME_END = "GAME.END";
 
 
     private Manager manager;
@@ -92,7 +94,11 @@ public class MatchesWebSocket extends TextWebSocketHandler {
                 }
 
                 break;
-            case "":
+            case GAME_LEFT_MATCH:
+                JSONObject jso = new JSONObject();
+                jso.put("type", GAME_END);
+                jso.put("id_math", _message.getId_match());
+                jso.put("receiver", _message.getReceiver());
 
         }
     }

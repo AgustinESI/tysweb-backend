@@ -1,7 +1,7 @@
 package edu.uclm.esi.tecsistweb.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -10,28 +10,34 @@ import java.util.Random;
 import java.util.UUID;
 
 @Data
-//@Entity
-//@Table(name = "match")
+@Entity
+@Table(name = "game_match")
 public class Match {
 
     @Id
     @Column(length = 36)
     private String id_match = UUID.randomUUID().toString();
 
-    //        @OneToOne
-//    @JoinColumn(name = "id")¡
-    private User winner;
-    //    @Transient
+    @Transient
     private List<Board> boardList = new ArrayList<>();
-    //        @ManyToMany
-//    @JoinTable(
-//            name = "match_user",
-//            joinColumns = @JoinColumn(name = "id_match"),
-//            inverseJoinColumns = @JoinColumn(name = "id_user")
-//    )
+    @ManyToMany
+    @JoinTable(
+            name = "match_players",
+            joinColumns = @JoinColumn(name = "match_id"),
+            inverseJoinColumns = @JoinColumn(name = "player_id")
+    )
     private List<User> players = new ArrayList<>();
-    //    @Transient
+    @Transient
     private User currentUser;
+    @ManyToOne
+    private User winner;
+    @Column
+    @JsonIgnore
+    private String gameType;
+    @Column(name = "timestamp")
+    @JsonIgnore
+    private String timestamp;
+
 
     public void addUser(User user) {
         players.add(user);
@@ -49,5 +55,4 @@ public class Match {
             }
         }
     }
-
 }

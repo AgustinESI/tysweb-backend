@@ -42,6 +42,7 @@ public class MasterMind extends Board implements Game {
             for (int j = 0; j < super.getBoard()[i].length; j++) {
                 if (i == 0 && j < 6) {
                     super.getBoard()[i][j] = colors[new Random().nextInt(colors.length)].code;
+                    System.out.println(super.getBoard()[0]);
                 } else
                     super.getBoard()[i][j] = '-';
             }
@@ -105,7 +106,7 @@ public class MasterMind extends Board implements Game {
     }
 
     @Override
-    public boolean add(Match match, String combination) {
+    public Boolean add(Match match, String combination) {
         boolean out = false;
         String[] colors = combination.split(",");
 
@@ -118,6 +119,10 @@ public class MasterMind extends Board implements Game {
         match.getBoardList().add(0, currentBoard);
 
         out = currentBoard.checkWinner();
+
+        if (currentBoard.getBoard()[currentBoard.getBoard().length-1][0] != '-' && !out) {
+            return null;
+        }
 
         if (!out)
             match.passTurn();

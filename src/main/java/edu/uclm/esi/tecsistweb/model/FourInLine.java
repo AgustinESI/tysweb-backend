@@ -78,7 +78,7 @@ public class FourInLine extends Board implements Game {
 
 
     @Override
-    public boolean add(Match match, String combination) {
+    public Boolean add(Match match, String combination) {
         Board board = null;
         boolean set = false;
         boolean out = false;
@@ -96,10 +96,26 @@ public class FourInLine extends Board implements Game {
         }
 
         if (!set) {
-            throw new TySWebException(HttpStatus.FORBIDDEN, new Exception("The column is alredy fill"));
+            throw new TySWebException(HttpStatus.FORBIDDEN, new Exception("The column is already fill"));
         }
 
         out = board.checkWinner();
+        boolean fill = true;
+        if (!out) {
+            for (int i = 0; i < board.getBoard().length; i++) {
+                for (int j = 0; j < board.getBoard()[i].length; j++) {
+                    if (board.getBoard()[i][j] == '0') {
+                        fill = false;
+                        break;
+                    }
+                }
+            }
+            if (fill) {
+                return null;
+            } else {
+                out = fill;
+            }
+        }
 
         return out;
     }

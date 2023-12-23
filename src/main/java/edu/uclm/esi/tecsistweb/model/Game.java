@@ -7,6 +7,6 @@ public interface Game {
     boolean checkWinner();
     void doMovement(Object obj);
 
-    boolean add(Match match, String combination);
+    Boolean add(Match match, String combination);
 
 }

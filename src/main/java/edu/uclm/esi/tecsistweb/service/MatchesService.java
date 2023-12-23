@@ -3,6 +3,7 @@ package edu.uclm.esi.tecsistweb.service;
 import edu.uclm.esi.tecsistweb.model.Match;
 import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
+import edu.uclm.esi.tecsistweb.repository.MatchDAO;
 import edu.uclm.esi.tecsistweb.repository.UserDAO;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -13,17 +14,19 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 
 @Service
-public class MatchesService {
+public class MatchesService extends HelperService {
 
     @Getter
     @Autowired
     private WaittingRoom waittingRoom;
     @Autowired
     private UserDAO userDAO;
+    @Autowired
+    private MatchDAO matchDAO;
 
 
-    public Match start(String id_user, String game_type) {
-        return waittingRoom.start(id_user, game_type);
+    public Match start(User user, String game_type) {
+        return waittingRoom.start(user, game_type);
     }
 
     public Match getMatch(String id_match) {
@@ -66,18 +69,31 @@ public class MatchesService {
                 throw new TySWebException(HttpStatus.FORBIDDEN, new Exception("Ilegal movement, not your turn"));
             }
 
-            boolean isWinner = match.getBoardList().get(0).add(match, combination);
+            Boolean isWinner = match.getBoardList().get(0).add(match, combination);
 
-            if (isWinner) {
-                User winner = userDAO.findById(id_user).get();
-                match.setWinner(winner);
+            if (isWinner == null) {
+                super.getTimestamp(match);
+                this.matchDAO.save(match);
+                User draw = new User();
+                draw.setName("DRAW GAME");
+                match.setWinner(draw);
+            } else if (isWinner) {
+
+                if (userDAO.findById(id_user).isPresent()) {
+                    User winner = userDAO.findById(id_user).get();
+                    match.setWinner(winner);
+                }
+
+                super.getTimestamp(match);
+                this.matchDAO.save(match);
             }
 
         } else {
             throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no match with id: " + id_match));
         }
-
-
     }
 
+    public User findUserById(String idUser) {
+        return this.userDAO.findById(idUser).get();
+    }
 }

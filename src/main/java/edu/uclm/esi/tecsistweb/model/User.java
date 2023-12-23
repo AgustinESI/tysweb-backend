@@ -1,10 +1,13 @@
 package edu.uclm.esi.tecsistweb.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import edu.uclm.esi.tecsistweb.model.dto.UserMatchDTO;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.apache.commons.codec.digest.DigestUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -17,9 +20,9 @@ public class User {
 
     @Id
     @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
+    protected String id = UUID.randomUUID().toString();
     @Column(nullable = false)
-    private String name;
+    protected String name;
     @Column(nullable = false)
     private String email;
     @Column(nullable = false)
@@ -33,6 +36,11 @@ public class User {
     private String image = "images\\default.png";
     private String city;
     private String temperature;
+    @ManyToMany(mappedBy = "players")
+    @JsonIgnore
+    private List<Match> matches = new ArrayList<>();
+    @Transient
+    private UserMatchDTO userMatchesInfo;
 
     public void setPwd(String pwd) {
         this.pwd = DigestUtils.sha512Hex(pwd);

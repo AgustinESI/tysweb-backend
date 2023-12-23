@@ -19,7 +19,7 @@ public abstract class Board {
         this.doMovement(obj);
     }
 
-    public boolean add(Match match, String combination) {
+    public Boolean add(Match match, String combination) {
         return this.add(match, combination);
     }
 }

@@ -1,6 +1,8 @@
 package edu.uclm.esi.tecsistweb.service;
 
+import edu.uclm.esi.tecsistweb.model.Match;
 import edu.uclm.esi.tecsistweb.model.User;
+import edu.uclm.esi.tecsistweb.model.dto.UserMatchDTO;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
 import edu.uclm.esi.tecsistweb.repository.UserDAO;
 import org.apache.commons.lang3.StringUtils;
@@ -10,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Optional;
 
 
@@ -96,5 +99,40 @@ public class UserService extends HelperService {
 
     public void saveUser(User user) {
         this.userDAO.save(user);
+    }
+
+    public UserMatchDTO getUserMatchesInfo(String id_user) {
+
+        UserMatchDTO out = new UserMatchDTO();
+        Optional<User> optUser = this.userDAO.findById(id_user);
+
+        if (!optUser.isPresent()) {
+            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
+        }
+        try {
+            User user = optUser.get();
+
+            out.setTotal(user.getMatches().size());
+//            out.setGames(new HashMap<>());
+
+            int win = 0;
+            for (Match match : user.getMatches()) {
+                if (match.getWinner().getId().equals(id_user)) {
+                    win++;
+//                    if (out.getGames().get(match.getGameType()) == null) {
+//                        out.getGames().put(match.getGameType(), 1);
+//                    } else {
+//                        out.getGames().put(match.getGameType(), out.getGames().get(match.getGameType()) + 1);
+//                    }
+                }
+            }
+
+            out.setWin(win);
+            out.setLost(out.getTotal() - out.getWin());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return out;
     }
 }

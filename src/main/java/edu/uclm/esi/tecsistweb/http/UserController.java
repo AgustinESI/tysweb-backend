@@ -1,6 +1,7 @@
 package edu.uclm.esi.tecsistweb.http;
 
 import edu.uclm.esi.tecsistweb.model.User;
+import edu.uclm.esi.tecsistweb.model.dto.UserMatchDTO;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
 import edu.uclm.esi.tecsistweb.service.EmailSenderService;
 import edu.uclm.esi.tecsistweb.service.HelperService;
@@ -75,6 +76,19 @@ public class UserController {
             Optional<User> optUser = userService.getUser(id);
             if (optUser.isPresent())
                 return new ResponseEntity<>(this.userService.activateAccount(optUser.get()), HttpStatus.OK);
+            else
+                throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
+        } else {
+            throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("ID user cannot be empty"));
+        }
+    }
+
+    @GetMapping(value = "/matches/info/{id}")
+    public ResponseEntity<UserMatchDTO> getUserMatchesInfo(@PathVariable String id) {
+        if (StringUtils.isNotBlank(id)) {
+            Optional<User> optUser = userService.getUser(id);
+            if (optUser.isPresent())
+                return new ResponseEntity<>(this.userService.getUserMatchesInfo(id), HttpStatus.OK);
             else
                 throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
         } else {

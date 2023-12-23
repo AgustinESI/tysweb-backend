@@ -3,6 +3,8 @@ package edu.uclm.esi.tecsistweb.service;
 import edu.uclm.esi.tecsistweb.model.Board;
 import edu.uclm.esi.tecsistweb.model.Match;
 import edu.uclm.esi.tecsistweb.model.User;
+import edu.uclm.esi.tecsistweb.model.dto.GameMatchDTO;
+import edu.uclm.esi.tecsistweb.model.dto.UserMatchDTO;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
 import edu.uclm.esi.tecsistweb.repository.UserDAO;
 import lombok.Getter;
@@ -11,11 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,16 +34,13 @@ public class WaittingRoom {
     private List<Match> pending_matchs = new ArrayList<>();
 
 
-    public Match start(String id_user, String game_type) {
-        Optional<User> optUser = this.userDAO.findById(id_user);
+    public Match start(User user, String game_type) {
 
-        if (!optUser.isPresent()) {
-            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
-        }
+
 
         Match out = new Match();
-        getImage(optUser);
-        User user = optUser.get();
+//        getImage(cur);
+        user.setUserMatchesInfo(this.getUserMatchesInfo(user.getId()));
         boolean set = false;
 
         if (this.pending_matchs.isEmpty()) {
@@ -59,7 +54,7 @@ public class WaittingRoom {
 
                     // Para no introducir dos veces el mismo usuario, al recargar la pantalla.
                     for (User _user : _match.getPlayers()) {
-                        if (_user.getId().equals(id_user)) {
+                        if (_user.getId().equals(user.getId())) {
                             return _match;
                         }
                     }
@@ -105,6 +100,7 @@ public class WaittingRoom {
                 out.getBoardList().add(board);
                 user.setColor("R");
                 out.addUser(user);
+                out.setGameType(game_type);
                 this.getPending_matchs().add(out);
             }
         } catch (Exception e) {
@@ -113,7 +109,8 @@ public class WaittingRoom {
 
         return out;
     }
-    private void getImage(Optional<User> optUser){
+
+    private void getImage(Optional<User> optUser) {
         try {
             String projectPath = System.getProperty("user.dir");
             String imagePath = optUser.get().getImage();
@@ -126,9 +123,54 @@ public class WaittingRoom {
 
             optUser.get().setImage(base64Image);
 
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new TySWebException(HttpStatus.INTERNAL_SERVER_ERROR, new Exception("Cannot process the user image"));
         }
+    }
+
+    public UserMatchDTO getUserMatchesInfo(String id_user) {
+
+        UserMatchDTO out = new UserMatchDTO();
+        Optional<User> optUser = this.userDAO.findById(id_user);
+
+        if (!optUser.isPresent()) {
+            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
+        }
+        try {
+            User user = optUser.get();
+
+            out.setTotal(user.getMatches().size());
+            out.setGames(new ArrayList<>());
+            Map<String, Integer> map = new HashMap<>();
+
+            int win = 0;
+            int draw = 0;
+            for (Match match : user.getMatches()) {
+                if (match.getWinner() == null){
+                    draw++;
+                }
+                if (match.getWinner()!=null && match.getWinner().getId().equals(id_user)) {
+                    win++;
+                }
+                if (map.get(match.getGameType()) == null) {
+                    map.put(match.getGameType(), 1);
+                } else {
+                    map.put(match.getGameType(), map.get(match.getGameType()) + 1);
+                }
+            }
+
+            for (Map.Entry<String, Integer> entry : map.entrySet()) {
+                out.getGames().add(new GameMatchDTO(entry.getKey(), entry.getValue()));
+            }
+
+            out.setWin(win);
+            out.setDraw(draw);
+            out.setLost(out.getTotal() - out.getWin()- out.getDraw());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return out;
     }
 
 }

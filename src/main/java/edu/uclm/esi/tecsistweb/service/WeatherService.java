@@ -52,7 +52,8 @@ public class WeatherService {
             String city = jsonNode.get("location").get("name").asText();
             String region = jsonNode.get("location").get("region").asText();
             String country = jsonNode.get("location").get("country").asText();
-            user.setCity(city + ", " + region + ", " + country);
+//            user.setCity(city + ", " + region + ", " + country);
+            user.setCity(city);
 
             String temperature = jsonNode.get("current").get("temp_c").asText()+" ºC";
             user.setTemperature(temperature);
