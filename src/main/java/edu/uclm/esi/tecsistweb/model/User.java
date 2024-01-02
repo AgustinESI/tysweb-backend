@@ -41,6 +41,7 @@ public class User {
     private List<Match> matches = new ArrayList<>();
     @Transient
     private UserMatchDTO userMatchesInfo;
+    private Integer paidMatches=0;
 
     public void setPwd(String pwd) {
         this.pwd = DigestUtils.sha512Hex(pwd);
