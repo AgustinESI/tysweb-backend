@@ -45,7 +45,7 @@ public class PaymentsController {
             String clientSecret = jso.getString("client_secret");
             session.setAttribute("client_secret", clientSecret);
             session.setAttribute("matches", matches);
-            return clientSecret;
+            return "{\"client_secret\":\""+clientSecret+"\"}";
         } catch (Exception e) {
             throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception(e.getMessage()));
         }
