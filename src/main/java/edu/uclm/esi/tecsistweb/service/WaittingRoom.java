@@ -39,7 +39,6 @@ public class WaittingRoom {
 
 
         Match out = new Match();
-        getImage(user);
         user.setUserMatchesInfo(this.getUserMatchesInfo(user.getId()));
         boolean set = false;
 
@@ -108,24 +107,6 @@ public class WaittingRoom {
         }
 
         return out;
-    }
-
-    private void getImage(User user) {
-        try {
-            String projectPath = System.getProperty("user.dir");
-            String imagePath = user.getImage();
-            String absoluteImagePath = projectPath + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + imagePath;
-            byte[] imageBytes = Files.readAllBytes(Path.of(absoluteImagePath));
-
-            String[] fileParts = imagePath.split("\\."); // Dividir por el punto
-            String imageExtension = fileParts[fileParts.length - 1].toLowerCase();
-            String base64Image = "data:image/" + imageExtension + ";base64," + Base64.getEncoder().encodeToString(imageBytes);
-
-            user.setImage(base64Image);
-
-        } catch (Exception e) {
-            throw new TySWebException(HttpStatus.INTERNAL_SERVER_ERROR, new Exception("Cannot process the user image"));
-        }
     }
 
     public UserMatchDTO getUserMatchesInfo(String id_user) {

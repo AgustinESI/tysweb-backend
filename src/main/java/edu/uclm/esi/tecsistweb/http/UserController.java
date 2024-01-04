@@ -12,18 +12,10 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 
@@ -101,18 +93,6 @@ public class UserController {
         if (StringUtils.isNotBlank(id)) {
             Optional<User> optUser = userService.getUser(id);
             if (optUser.isPresent()) {
-
-               /* try {
-                    String projectPath = System.getProperty("user.dir");
-                    String imagePath = optUser.get().getImage();
-                    String absoluteImagePath = projectPath + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + imagePath;
-                    byte[] imageBytes = Files.readAllBytes(Path.of(absoluteImagePath));
-
-                    String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-                    optUser.get().setImage(base64Image);
-                } catch (Exception e) {
-                    throw new TySWebException(HttpStatus.INTERNAL_SERVER_ERROR, new Exception("Cannot process the user image"));
-                }*/
                 return optUser.get();
             } else
                 throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("User not found"));
@@ -121,42 +101,6 @@ public class UserController {
         }
 
     }
-
-    @GetMapping("/{user_id}/image")
-    public ResponseEntity<byte[]> getUserImage(@PathVariable("user_id") String user_id) throws IOException {
-        Optional<User> userOptional = userService.getUser(user_id);
-
-        String projectPath = System.getProperty("user.dir");
-        String imagePath = userOptional.get().getImage();
-        String absoluteImagePath = projectPath + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + imagePath;
-
-
-        if (absoluteImagePath != null) {
-            try {
-                File imageFile = new File(absoluteImagePath);
-
-                // Verificar si el archivo existe
-                if (imageFile.exists() && imageFile.isFile()) {
-                    FileInputStream fileInputStream = new FileInputStream(imageFile);
-                    byte[] imageBytes = fileInputStream.readAllBytes();
-                    fileInputStream.close();
-
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.IMAGE_PNG);
-
-                    return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-    }
-
 
     @PutMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public User login(HttpSession session, @RequestBody Map<String, String> body) {
