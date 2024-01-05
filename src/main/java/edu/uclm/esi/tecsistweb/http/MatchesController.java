@@ -5,6 +5,7 @@ import edu.uclm.esi.tecsistweb.model.User;
 import edu.uclm.esi.tecsistweb.model.UserAnonimo;
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
 import edu.uclm.esi.tecsistweb.service.MatchesService;
+import edu.uclm.esi.tecsistweb.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -24,6 +25,8 @@ public class MatchesController {
 
     @Autowired
     private MatchesService matchesService;
+    @Autowired
+    private UserService userService;
 
     @GetMapping("/start/{game_type}")
     public Match start(HttpSession session, @PathVariable String game_type, HttpServletRequest request) {

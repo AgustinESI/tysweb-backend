@@ -108,14 +108,13 @@ public class MatchesWebSocket extends TextWebSocketHandler {
         switch (_message.getType()) {
             case INDENT:
                 //{"type":"IDENT", "name":"macario" }
+                if (!this.manager.getSessions_map_name().containsKey(_message.getName())){
                 SessionWS _sessionws = new SessionWS(_message.getName(), session);
-
                 this.manager.getSessions_map_name().put(_message.getName(), _sessionws);
                 this.manager.getSessions_map_id().put(session.getId(), _sessionws);
-
                 this.expand(session, "type", NEW_USER, "name", _sessionws.getName());
                 this.notifyMySelf(session);
-
+        }
                 break;
             case PRIVATE_MESSAGE:
                 //{"type":"PRIVATE.MESSAGE", "receiver":"macario", "content": "hola"}
@@ -198,16 +197,10 @@ public class MatchesWebSocket extends TextWebSocketHandler {
     }
 
     private void deleteSession(WebSocketSession session) {
-//        switch (session.getUri().toString()) {
-//            case "ws://localhost:8080/ws-matches":
-//                this.manager.getWebSocketSessionList().remove(session);
-//                SessionWS _sessionWS = this.manager.getSessions_map_id().remove(session.getId());
-//                this.manager.getSessions_map_name().remove(_sessionWS.getName());
-//                break;
-//            case "ws://localhost:8080/ws-chat":
         this.manager.getWebSocketSessionList().remove(session);
         SessionWS _sessionWS = this.manager.getSessions_map_id().remove(session.getId());
         this.manager.getSessions_map_name().remove(_sessionWS.getName());
+        log.info("[INFO] Deleted existing websocket session");
 //                break;
 //        }
 

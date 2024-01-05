@@ -32,6 +32,8 @@ public class WaittingRoom {
     @Setter
     @Getter
     private List<Match> pending_matchs = new ArrayList<>();
+    @Autowired
+    private UserService userService;
 
 
     public Match start(User user, String game_type) {
@@ -40,6 +42,7 @@ public class WaittingRoom {
 
         Match out = new Match();
         user.setUserMatchesInfo(this.getUserMatchesInfo(user.getId()));
+
         boolean set = false;
 
         if (this.pending_matchs.isEmpty()) {
@@ -59,6 +62,7 @@ public class WaittingRoom {
                     }
                     out = this.pending_matchs.remove(i);
                     user.setColor("Y");
+                    this.userService.addMatches(user.getId(), -1);
                     out.addUser(user);
                     out.start();
                     this.current_matchs.put(out.getId_match(), out);
@@ -99,6 +103,7 @@ public class WaittingRoom {
                 out.getBoardList().add(board);
                 user.setColor("R");
                 out.addUser(user);
+                this.userService.addMatches(user.getId(), -1);
                 out.setGameType(game_type);
                 this.getPending_matchs().add(out);
             }

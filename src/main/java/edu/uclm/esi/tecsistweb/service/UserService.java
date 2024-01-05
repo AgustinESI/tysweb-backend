@@ -46,6 +46,7 @@ public class UserService extends HelperService {
         user.setName(name);
         user.setPwd(pwd);
 
+
         try {
             response = this.userDAO.save(user);
         } catch (DataAccessException e) {
