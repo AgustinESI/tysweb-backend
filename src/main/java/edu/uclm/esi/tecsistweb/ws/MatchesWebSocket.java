@@ -94,12 +94,6 @@ public class MatchesWebSocket extends TextWebSocketHandler {
                 }
 
                 break;
-            case GAME_LEFT_MATCH:
-                JSONObject jso = new JSONObject();
-                jso.put("type", GAME_END);
-                jso.put("id_math", _message.getId_match());
-                jso.put("receiver", _message.getReceiver());
-
         }
     }
 
@@ -108,13 +102,13 @@ public class MatchesWebSocket extends TextWebSocketHandler {
         switch (_message.getType()) {
             case INDENT:
                 //{"type":"IDENT", "name":"macario" }
-                if (!this.manager.getSessions_map_name().containsKey(_message.getName())){
-                SessionWS _sessionws = new SessionWS(_message.getName(), session);
-                this.manager.getSessions_map_name().put(_message.getName(), _sessionws);
-                this.manager.getSessions_map_id().put(session.getId(), _sessionws);
-                this.expand(session, "type", NEW_USER, "name", _sessionws.getName());
-                this.notifyMySelf(session);
-        }
+                if (!this.manager.getSessions_map_name().containsKey(_message.getName())) {
+                    SessionWS _sessionws = new SessionWS(_message.getName(), session);
+                    this.manager.getSessions_map_name().put(_message.getName(), _sessionws);
+                    this.manager.getSessions_map_id().put(session.getId(), _sessionws);
+                    this.expand(session, "type", NEW_USER, "name", _sessionws.getName());
+                    this.notifyMySelf(session);
+                }
                 break;
             case PRIVATE_MESSAGE:
                 //{"type":"PRIVATE.MESSAGE", "receiver":"macario", "content": "hola"}
@@ -128,9 +122,6 @@ public class MatchesWebSocket extends TextWebSocketHandler {
                 if (_sessionWSReceiver != null) {
                     WebSocketSession _sessionReceiver = _sessionWSReceiver.getSession();
                     _sessionReceiver.sendMessage(new TextMessage(response.toString()));
-                } else {
-                    response.put("type", CLOSED_SESSION);
-                    session.sendMessage(new TextMessage(response.toString()));
                 }
 
 
@@ -209,6 +200,18 @@ public class MatchesWebSocket extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+
+        if (this.manager.getSessions_map_id().get(session.getId()) != null) {
+            String user_name = this.manager.getSessions_map_id().get(session.getId()).getName();
+            switch (session.getUri().getPath()) {
+                case "/ws-matches":
+                    this.expand(session, "type", GAME_END, "name", user_name);
+                    break;
+                case "/ws-chat":
+                    this.expand(session, "type", CLOSED_SESSION, "name", user_name);
+                    break;
+            }
+        }
         deleteSession(session);
     }
 

@@ -6,5 +6,6 @@ import org.springframework.data.repository.CrudRepository;
 public interface UserDAO extends CrudRepository<User, String> {
 
     User findByEmailAndPwd(String email, String pwd);
+    User findByName(String name);
 
 }

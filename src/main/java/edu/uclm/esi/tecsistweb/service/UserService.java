@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Optional;
 
 
@@ -21,6 +20,15 @@ public class UserService extends HelperService {
 
     @Autowired
     private UserDAO userDAO;
+
+    public User findByString(String name) {
+
+        User user = userDAO.findByName(name);
+        if (user == null) {
+            user = new User();
+        }
+        return user;
+    }
 
     public User register(String name, String email, String pwd, String pwd2) {
 
@@ -140,7 +148,7 @@ public class UserService extends HelperService {
     public void addMatches(String userId, Integer matches) {
         User user = this.userDAO.findById(userId).get();
         Integer paidMatches = user.getPaidMatches();
-        if (paidMatches==null)
+        if (paidMatches == null)
             paidMatches = 0;
         user.setPaidMatches(paidMatches + matches);
         this.userDAO.save(user);

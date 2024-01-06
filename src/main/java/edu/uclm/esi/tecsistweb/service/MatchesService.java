@@ -96,4 +96,21 @@ public class MatchesService extends HelperService {
     public User findUserById(String idUser) {
         return this.userDAO.findById(idUser).get();
     }
+
+    public Match end(Map<String, Object> body) {
+
+        String id_match = body.get("id_match").toString();
+        String id_user = body.get("id_user").toString();
+
+        Match match = this.waittingRoom.getCurrent_matchs().get(id_match);
+        if (match != null) {
+            User user = this.findUserById(id_user);
+            match.setWinner(user);
+            this.matchDAO.save(match);
+            return match;
+        } else {
+            throw new TySWebException(HttpStatus.NOT_FOUND, new Exception("There is no match with id: " + id_match));
+        }
+
+    }
 }

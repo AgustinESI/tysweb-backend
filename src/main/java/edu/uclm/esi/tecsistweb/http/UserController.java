@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 import java.util.Optional;
 
@@ -99,7 +100,15 @@ public class UserController {
         } else {
             throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("ID user cannot be empty"));
         }
+    }
 
+    @GetMapping("name/{name}")
+    public User getUserByName(@PathVariable String name) {
+        if (StringUtils.isNotBlank(name)) {
+            return userService.findByString(name);
+        } else {
+            throw new TySWebException(HttpStatus.BAD_REQUEST, new Exception("ID user cannot be empty"));
+        }
     }
 
     @PutMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)

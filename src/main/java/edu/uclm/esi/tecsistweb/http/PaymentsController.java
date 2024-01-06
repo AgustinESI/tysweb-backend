@@ -2,6 +2,7 @@ package edu.uclm.esi.tecsistweb.http;
 
 import edu.uclm.esi.tecsistweb.model.exception.TySWebException;
 import edu.uclm.esi.tecsistweb.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +17,7 @@ import com.stripe.param.PaymentIntentCreateParams;
 
 @RestController
 @RequestMapping("payments")
-public class PaymentsController {
-    @Value("${payments.publickey.stripe}")
-    private String public_key;
+public class PaymentsController extends HelperController{
 
     @Value("${payments.privatekey.stripe}")
     private String private_key;
@@ -27,7 +26,8 @@ public class PaymentsController {
     private UserService userService;
 
     @GetMapping("/prepay/{matches}")
-    public String prepay(HttpSession session, @PathVariable int matches){
+    public String prepay(HttpSession session, @PathVariable int matches, HttpServletRequest request){
+        manageCookies(request, session);
         try {
             if (session.getAttribute("id_user")==null)
                 throw new TySWebException(HttpStatus.FORBIDDEN,
